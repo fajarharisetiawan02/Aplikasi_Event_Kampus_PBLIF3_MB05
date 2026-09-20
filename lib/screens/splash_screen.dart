@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // TODO: nanti kalau sudah ada penyimpanan token (login) &
     // penanda "sudah pernah buka app", cek di sini:
-    // - belum pernah buka app sama sekali -> OnboardingScreen (seperti sekarang)
+    // - belum pernah buka app sama sekali -> OnboardingScreen
     // - sudah pernah tapi belum login -> LoginScreen
     // - sudah login -> HomeScreen
 
@@ -36,21 +36,22 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Logo aplikasi
             Image.asset(
               'assets/images/logo.png',
               width: 160,
               height: 160,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             const Text(
               'Temukan & Kelola Event Kampusmu',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 color: Colors.grey,
               ),
             ),

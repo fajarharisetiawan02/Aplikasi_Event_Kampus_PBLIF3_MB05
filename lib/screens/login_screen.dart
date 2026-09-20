@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
 import 'register_screen.dart';
-
-// import 'home_screen.dart'; // arahkan ke halaman Home setelah login berhasil
+import 'home_screen.dart'; // pastikan file ini ada
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,16 +39,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // TODO: simpan token/session (mis. pakai SharedPreferences atau secure storage)
-      // TODO: arahkan ke HomeScreen, contoh:
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => const HomeScreen()),
-      // );
-
-      ScaffoldMessenger.of(
+      // langsung arahkan ke HomeScreen
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(SnackBar(content: Text('Selamat datang, ${user.nama}!')));
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Selamat datang, ${user.nama}!')),
+      );
     } on AuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
