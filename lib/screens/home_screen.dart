@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import 'ticket_screen.dart';
+import 'explore_screen.dart'; // <-- 1. Import ExploreScreen di sini
 
 class HomeScreen extends StatefulWidget {
   final String? userName;
@@ -62,13 +63,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Daftar halaman sesuai urutan bottom navigation.
-    // Home & Tiket sudah dibuat sungguhan, sisanya masih placeholder.
+    // 2. Sambungkan ExploreScreen ke index 1 pada Bottom Navigation
     final List<Widget> pages = [
-      _buildHomeContent(), // index 0: Home
-      _placeholderPage('Explore', Icons.search_rounded), // index 1
-      const TicketScreen(), // index 2: Tiket
-      _placeholderPage('Profil', Icons.person_rounded), // index 3
+      _buildHomeContent(),         // index 0: Home
+      const ExploreScreen(),       // index 1: Explore (Sudah tersambung!)
+      const TicketScreen(),        // index 2: Tiket
+      _placeholderPage('Profil', Icons.person_rounded), // index 3: Profil
     ];
 
     return Scaffold(
@@ -111,7 +111,6 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Row(
               children: [
-                // Logo asli (bukan ikon manual)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(14),
                   child: Image.asset(
@@ -121,10 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     fit: BoxFit.cover,
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
-                // Nama aplikasi
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,8 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-
-                // Notification
                 Container(
                   width: 42,
                   height: 42,
@@ -196,7 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Color(0xFF64748B),
                   ),
                 ),
-
               ],
             ),
           ),
@@ -212,18 +205,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 _sectionTitle(
                   title: 'Kategori',
                   action: 'Lihat semua',
-                  onTap: () {},
+                  onTap: () {
+                    // Opsional: Jika tombol "Lihat semua" diklik, bisa pindah tab ke Explore (index 1)
+                    setState(() {
+                      _selectedIndex = 1;
+                    });
+                  },
                 ),
-
                 const SizedBox(height: 14),
-
                 SizedBox(
                   height: 95,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: categories.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(width: 12),
+                    separatorBuilder: (_, _) => const SizedBox(width: 12),
                     itemBuilder: (context, index) {
                       return _categoryItem(categories[index]);
                     },
@@ -241,7 +236,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _sectionTitle(
               title: 'Event Pilihan',
               action: 'Lihat semua',
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 1;
+                });
+              },
             ),
           ),
         ),
@@ -255,8 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
                 itemCount: events.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: 16),
+                separatorBuilder: (_, _) => const SizedBox(width: 16),
                 itemBuilder: (context, index) {
                   return _eventCard(events[index]);
                 },
@@ -272,7 +270,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: _sectionTitle(
               title: 'Event Terbaru',
               action: 'Lihat semua',
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 1;
+                });
+              },
             ),
           ),
         ),
@@ -318,9 +320,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         GestureDetector(
           onTap: onTap,
-          child: const Text(
-            'Lihat semua',
-            style: TextStyle(
+          child: Text(
+            action,
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.primaryBlue,
@@ -410,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Container(
                     height: 155,
                     color: AppColors.primaryBlue.withValues(alpha: 0.1),
-                    child: Icon(
+                    child: const Icon(
                       Icons.image_outlined,
                       size: 50,
                       color: AppColors.primaryBlue,
@@ -418,7 +420,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-
               Positioned(
                 top: 12,
                 right: 12,
@@ -436,8 +437,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-
-              // Badge kuning untuk event gratis, sesuai aksen warna logo
               if (isGratis)
                 Positioned(
                   top: 12,
@@ -463,7 +462,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Column(
@@ -479,9 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppColors.textDark,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Row(
                   children: [
                     const Icon(
@@ -501,9 +497,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 4),
-
                 Row(
                   children: [
                     const Icon(
@@ -577,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 105,
                   height: 105,
                   color: AppColors.primaryBlue.withValues(alpha: 0.1),
-                  child: Icon(
+                  child: const Icon(
                     Icons.image_outlined,
                     color: AppColors.primaryBlue,
                   ),
@@ -585,7 +579,6 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -603,9 +596,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.textDark,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
                     event['date']!,
                     style: const TextStyle(
@@ -613,9 +604,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Color(0xFF64748B),
                     ),
                   ),
-
                   const SizedBox(height: 4),
-
                   Text(
                     event['price']!,
                     style: TextStyle(
@@ -630,7 +619,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
           const Padding(
             padding: EdgeInsets.only(right: 12),
             child: Icon(

@@ -71,7 +71,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     if (selectedCategory == 'Semua') {
       return events;
     }
-
     return events
         .where((event) => event['category'] == selectedCategory)
         .toList();
@@ -113,7 +112,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ],
                       ),
                     ),
-
                     Container(
                       width: 44,
                       height: 44,
@@ -148,7 +146,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -211,7 +209,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
 
-            // CATEGORY
+            // CATEGORY HORIZONTAL LIST
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 45,
@@ -219,12 +217,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
                   itemCount: categories.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(width: 10),
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     final category = categories[index];
-                    final isSelected =
-                        selectedCategory == category;
+                    final isSelected = selectedCategory == category;
 
                     return GestureDetector(
                       onTap: () {
@@ -283,7 +279,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         color: Color(0xFF172033),
                       ),
                     ),
-
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
@@ -304,227 +299,101 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
 
-            // EVENT LIST
-            filteredEvents.isEmpty
-                ? SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 70),
-                      child: Column(
+            // FILTERED EVENTS LIST
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final event = filteredEvents[index];
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                    child: Container(
+                      height: 105,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
                         children: [
-                          Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFDBEAFE),
-                              borderRadius: BorderRadius.circular(24),
+                          ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              bottomLeft: Radius.circular(16),
                             ),
-                            child: const Icon(
-                              Icons.event_busy_outlined,
-                              size: 40,
-                              color: Color(0xFF2563EB),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Event tidak ditemukan',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
+                            child: Image.network(
+                              event['image'],
+                              width: 105,
+                              height: 105,
+                              fit: BoxFit.cover,
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Coba pilih kategori lainnya.',
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    event['title'],
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF172033),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    event['date'],
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    event['price'],
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: event['price'] == 'Gratis'
+                                          ? const Color(0xFFF97316)
+                                          : const Color(0xFF2563EB),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.only(right: 12),
+                            child: Icon(
+                              Icons.chevron_right_rounded,
+                              color: Color(0xFF94A3B8),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  )
-                : SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 16,
-                            ),
-                            child: _eventCard(
-                              filteredEvents[index],
-                            ),
-                          );
-                        },
-                        childCount: filteredEvents.length,
-                      ),
-                    ),
-                  ),
+                  );
+                },
+                childCount: filteredEvents.length,
+              ),
+            ),
 
             const SliverToBoxAdapter(
               child: SizedBox(height: 20),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // EVENT CARD
-  Widget _eventCard(Map<String, dynamic> event) {
-    return Container(
-      height: 125,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // IMAGE
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(18),
-              bottomLeft: Radius.circular(18),
-            ),
-            child: Image.network(
-              event['image'],
-              width: 125,
-              height: 125,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 125,
-                  height: 125,
-                  color: const Color(0xFFDBEAFE),
-                  child: const Icon(
-                    Icons.image_outlined,
-                    size: 40,
-                    color: Color(0xFF2563EB),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // CONTENT
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // CATEGORY
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDBEAFE),
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: Text(
-                      event['category'],
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // TITLE
-                  Text(
-                    event['title'],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF172033),
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // DATE
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 13,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          event['date'],
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  // LOCATION + PRICE
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 13,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          event['location'],
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        event['price'],
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2563EB),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const Padding(
-            padding: EdgeInsets.only(right: 10),
-            child: Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF94A3B8),
-            ),
-          ),
-        ],
       ),
     );
   }
