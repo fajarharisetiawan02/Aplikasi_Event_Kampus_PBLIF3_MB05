@@ -38,6 +38,13 @@ dependencies:
   # Dipakai untuk memanggil REST API (login, register, dll)
   http: ^1.2.0
 
+  # Dipakai untuk menampilkan QR code di halaman Detail Tiket
+  qr_flutter: ^4.1.0
+
+  # Dipakai untuk menyimpan akun hasil register ke local storage HP,
+  # supaya tidak hilang walau aplikasi ditutup total
+  shared_preferences: ^2.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

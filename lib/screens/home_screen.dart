@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../utils/app_colors.dart';
+import 'ticket_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String? userName;
+
+  const HomeScreen({super.key, this.userName});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -58,14 +62,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Daftar halaman sesuai urutan bottom navigation.
+    // Home & Tiket sudah dibuat sungguhan, sisanya masih placeholder.
+    final List<Widget> pages = [
+      _buildHomeContent(), // index 0: Home
+      _placeholderPage('Explore', Icons.search_rounded), // index 1
+      const TicketScreen(), // index 2: Tiket
+      _placeholderPage('Profil', Icons.person_rounded), // index 3
+    ];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: _buildHomeContent(),
+        child: pages[_selectedIndex],
       ),
-
       bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  // Halaman sementara untuk tab yang belum dibuat.
+  Widget _placeholderPage(String label, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 56, color: Colors.grey.shade300),
+          const SizedBox(height: 12),
+          Text(
+            'Halaman $label\nsegera hadir',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey),
+          ),
+        ],
+      ),
     );
   }
 
@@ -82,18 +111,14 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Row(
               children: [
-                // Logo
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2563EB),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.event_available,
-                    color: Colors.white,
-                    size: 25,
+                // Logo asli (bukan ikon manual)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 46,
+                    height: 46,
+                    fit: BoxFit.cover,
                   ),
                 ),
 
@@ -109,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF172033),
+                          color: AppColors.textDark,
                         ),
                       ),
                       SizedBox(height: 2),
@@ -139,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {},
                     icon: const Icon(
                       Icons.notifications_none_rounded,
-                      color: Color(0xFF172033),
+                      color: AppColors.textDark,
                     ),
                   ),
                 ),
@@ -155,12 +180,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Halo, User 👋',
-                  style: TextStyle(
+                Text(
+                  'Halo, ${widget.userName ?? 'User'} 👋',
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF172033),
+                    color: AppColors.textDark,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -172,51 +197,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
-
-                // SEARCH
-                Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Cari event...',
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: Color(0xFF64748B),
-                      ),
-                      suffixIcon: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.tune_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 15,
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -242,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: categories.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const SizedBox(width: 12),
                     itemBuilder: (context, index) {
                       return _categoryItem(categories[index]);
@@ -275,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
                 itemCount: events.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     const SizedBox(width: 16),
                 itemBuilder: (context, index) {
                   return _eventCard(events[index]);
@@ -333,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF172033),
+            color: AppColors.textDark,
           ),
         ),
         GestureDetector(
@@ -343,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2563EB),
+              color: AppColors.primaryBlue,
             ),
           ),
         ),
@@ -372,12 +352,12 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFFDBEAFE),
+              color: AppColors.primaryBlue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(
               category['icon'],
-              color: const Color(0xFF2563EB),
+              color: AppColors.primaryBlue,
               size: 22,
             ),
           ),
@@ -400,6 +380,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // =========================
 
   Widget _eventCard(Map<String, String> event) {
+    final bool isGratis = event['price'] == 'Gratis';
+
     return Container(
       width: 290,
       decoration: BoxDecoration(
@@ -407,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -427,11 +409,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 155,
-                    color: const Color(0xFFDBEAFE),
-                    child: const Icon(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                    child: Icon(
                       Icons.image_outlined,
                       size: 50,
-                      color: Color(0xFF2563EB),
+                      color: AppColors.primaryBlue,
                     ),
                   );
                 },
@@ -444,16 +426,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.favorite_border_rounded,
                     size: 20,
-                    color: Color(0xFF2563EB),
+                    color: AppColors.primaryBlue,
                   ),
                 ),
               ),
+
+              // Badge kuning untuk event gratis, sesuai aksen warna logo
+              if (isGratis)
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentYellow,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'GRATIS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
 
@@ -469,7 +476,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF172033),
+                    color: AppColors.textDark,
                   ),
                 ),
 
@@ -480,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Icon(
                       Icons.calendar_today_outlined,
                       size: 14,
-                      color: Color(0xFF2563EB),
+                      color: AppColors.primaryBlue,
                     ),
                     const SizedBox(width: 5),
                     Expanded(
@@ -502,7 +509,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Icon(
                       Icons.location_on_outlined,
                       size: 14,
-                      color: Color(0xFF2563EB),
+                      color: AppColors.primaryBlue,
                     ),
                     const SizedBox(width: 5),
                     Text(
@@ -515,10 +522,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Spacer(),
                     Text(
                       event['price']!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
+                        color: isGratis
+                            ? AppColors.accentOrange
+                            : AppColors.primaryBlue,
                       ),
                     ),
                   ],
@@ -536,6 +545,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // =========================
 
   Widget _smallEventCard(Map<String, String> event) {
+    final bool isGratis = event['price'] == 'Gratis';
+
     return Container(
       height: 105,
       decoration: BoxDecoration(
@@ -543,7 +554,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -565,10 +576,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Container(
                   width: 105,
                   height: 105,
-                  color: const Color(0xFFDBEAFE),
-                  child: const Icon(
+                  color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                  child: Icon(
                     Icons.image_outlined,
-                    color: Color(0xFF2563EB),
+                    color: AppColors.primaryBlue,
                   ),
                 );
               },
@@ -589,7 +600,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF172033),
+                      color: AppColors.textDark,
                     ),
                   ),
 
@@ -607,10 +618,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   Text(
                     event['price']!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2563EB),
+                      color: isGratis
+                          ? AppColors.accentOrange
+                          : AppColors.primaryBlue,
                     ),
                   ),
                 ],
@@ -672,16 +685,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 index: 2,
               ),
               _navItem(
-                icon: Icons.shopping_bag_outlined,
-                activeIcon: Icons.shopping_bag_rounded,
-                label: 'Pesanan',
-                index: 3,
-              ),
-              _navItem(
                 icon: Icons.person_outline_rounded,
                 activeIcon: Icons.person_rounded,
                 label: 'Profil',
-                index: 4,
+                index: 3,
               ),
             ],
           ),
@@ -714,7 +721,7 @@ class _HomeScreenState extends State<HomeScreen> {
               isSelected ? activeIcon : icon,
               size: 23,
               color: isSelected
-                  ? const Color(0xFF2563EB)
+                  ? AppColors.primaryBlue
                   : const Color(0xFF94A3B8),
             ),
             const SizedBox(height: 4),
@@ -725,7 +732,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight:
                     isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected
-                    ? const Color(0xFF2563EB)
+                    ? AppColors.primaryBlue
                     : const Color(0xFF94A3B8),
               ),
             ),

@@ -32,43 +32,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<_OnboardingItem> _items = [
     _OnboardingItem(
       icon: Icons.search,
-      title: 'Temukan Event Kampus',
-      description:
-          'Jelajahi berbagai event kampus mulai dari seminar, workshop, hingga konser dalam satu aplikasi.',
+      title: 'Informasi Event Kampus',
+      description: 'Dapatkan informasi lengkap berbagai event kampus mulai dari seminar, workshop, hingga kompetisi dalam satu aplikasi.',
       iconBgColor: AppColors.primaryBlue.withValues(alpha: 0.1),
       iconColor: AppColors.primaryBlue,
     ),
     _OnboardingItem(
       icon: Icons.confirmation_number_outlined,
-      title: 'Pesan Tiket dengan Mudah',
-      description:
-          'Pesan tiket, bayar langsung dari HP, dan dapatkan e-ticket berupa QR code untuk check-in di lokasi.',
+      title: 'Pendaftaran Event dengan Mudah',
+      description: 'Daftar event langsung dari HP, lengkapi pembayaran jika diperlukan, lalu dapatkan e-tiket berupa QR code untuk check-in di lokasi.',
       iconBgColor: AppColors.accentYellow.withValues(alpha: 0.15),
       iconColor: AppColors.accentOrange,
     ),
     _OnboardingItem(
       icon: Icons.campaign_outlined,
       title: 'Jadi Penyelenggara Event',
-      description:
-          'Punya event sendiri? Ajukan diri sebagai penyelenggara dan kelola tiket, peserta, hingga laporan penjualan.',
+      description: 'Punya event sendiri? Ajukan diri sebagai penyelenggara dan kelola pendaftaran, peserta, hingga laporan penjualan.',
       iconBgColor: AppColors.primaryBlue.withValues(alpha: 0.1),
       iconColor: AppColors.primaryBlue,
     ),
   ];
 
   void _goToLogin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   void _onNextPressed() {
     if (_currentPage < _items.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     } else {
       _goToLogin();
     }
@@ -89,29 +80,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Logo kecil di atas + tombol Lewati
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Image.asset('assets/images/logo.png', width: 40, height: 40),
-                  TextButton(
-                    onPressed: _goToLogin,
-                    child: const Text('Lewati'),
-                  ),
+                  TextButton(onPressed: _goToLogin, child: const Text('Lewati')),
                 ],
               ),
             ),
-
-            // Slide
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: _items.length,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
+                onPageChanged: (index) => setState(() => _currentPage = index),
                 itemBuilder: (context, index) {
                   final item = _items[index];
                   return Padding(
@@ -122,35 +105,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Container(
                           width: 160,
                           height: 160,
-                          decoration: BoxDecoration(
-                            color: item.iconBgColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            item.icon,
-                            size: 72,
-                            color: item.iconColor,
-                          ),
+                          decoration: BoxDecoration(color: item.iconBgColor, shape: BoxShape.circle),
+                          child: Icon(item.icon, size: 72, color: item.iconColor),
                         ),
                         const SizedBox(height: 40),
                         Text(
                           item.title,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textDark,
-                          ),
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textDark),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           item.description,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                            height: 1.5,
-                          ),
+                          style: const TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
                         ),
                       ],
                     ),
@@ -158,8 +126,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
             ),
-
-            // Indikator titik (dots)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -170,18 +136,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: _currentPage == index ? 22 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: _currentPage == index
-                        ? AppColors.primaryBlue
-                        : AppColors.primaryBlue.withValues(alpha: 0.2),
+                    color: _currentPage == index ? AppColors.primaryBlue : AppColors.primaryBlue.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 28),
-
-            // Tombol Lanjut / Mulai
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: SizedBox(
@@ -190,22 +151,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: _onNextPressed,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isLastPage
-                        ? AppColors.accentOrange
-                        : AppColors.primaryBlue,
+                    backgroundColor: isLastPage ? AppColors.accentOrange : AppColors.primaryBlue,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text(
-                    isLastPage ? 'Mulai' : 'Lanjut',
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  child: Text(isLastPage ? 'Mulai' : 'Lanjut', style: const TextStyle(fontSize: 16)),
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
           ],
         ),

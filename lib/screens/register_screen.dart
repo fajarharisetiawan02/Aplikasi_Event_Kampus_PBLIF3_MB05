@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-
 import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String? eventTitle;
 
-  const RegisterScreen({
-    super.key,
-    this.eventTitle,
-  });
+  const RegisterScreen({super.key, this.eventTitle});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -42,30 +39,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    // Validasi form
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    // Validasi syarat dan ketentuan
     if (!_agreeToTerms) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Kamu harus menyetujui Syarat & Ketentuan terlebih dahulu',
-          ),
+          content: Text('Kamu harus menyetujui Syarat & Ketentuan terlebih dahulu'),
           backgroundColor: Colors.red,
         ),
       );
-
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final user = await AuthService.register(
@@ -77,56 +64,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Akun berhasil dibuat. Selamat datang, ${user.nama}!',
-          ),
-          backgroundColor: Colors.green,
-        ),
+        SnackBar(content: Text('Akun berhasil dibuat. Silakan masuk, ${user.nama}!'), backgroundColor: Colors.green),
       );
 
-      // Kembali ke halaman sebelumnya
-      Navigator.pop(context);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
     } on AuthException catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
     } catch (e) {
-      // Menangani error lain yang tidak terduga
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e'), backgroundColor: Colors.red));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.eventTitle != null
-              ? 'Pendaftaran - ${widget.eventTitle}'
-              : 'Buat Akun',
-        ),
-      ),
+      appBar: AppBar(title: Text(widget.eventTitle != null ? 'Pendaftaran - ${widget.eventTitle}' : 'Buat Akun')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -135,102 +96,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: ListView(
               children: [
                 const SizedBox(height: 16),
-
                 Text(
-                  widget.eventTitle != null
-                      ? 'Daftar untuk ${widget.eventTitle}'
-                      : 'Daftar Akun Baru',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  widget.eventTitle != null ? 'Daftar untuk ${widget.eventTitle}' : 'Daftar Akun Baru',
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-
                 const SizedBox(height: 6),
-
                 const Text(
-                  'Setelah daftar, kamu bisa mengajukan diri sebagai\n'
-                  'penyelenggara event kapan saja.',
-                  style: TextStyle(
-                    color: Colors.grey,
-                  ),
+                  'Setelah daftar, kamu bisa mengajukan diri sebagai\npenyelenggara event kapan saja.',
+                  style: TextStyle(color: Colors.grey),
                 ),
-
                 const SizedBox(height: 28),
-
-                // Nama
                 _buildTextField(
                   controller: _namaController,
                   label: 'Nama Lengkap',
                   icon: Icons.person_outline,
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Nama wajib diisi';
-                    }
-
-                    if (value.trim().length < 3) {
-                      return 'Nama minimal 3 karakter';
-                    }
-
+                    if (value == null || value.trim().isEmpty) return 'Nama wajib diisi';
+                    if (value.trim().length < 3) return 'Nama minimal 3 karakter';
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 16),
-
-                // NIM
                 _buildTextField(
                   controller: _nimController,
                   label: 'NIM (Nomor Induk Mahasiswa)',
                   icon: Icons.badge_outlined,
                   keyboardType: TextInputType.number,
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'NIM wajib diisi';
-                    }
-
-                    final nim = value.trim();
-
+                    if (value == null || value.trim().isEmpty) return 'NIM wajib diisi';
                     final nimRegex = RegExp(r'^[0-9]{6,15}$');
-
-                    if (!nimRegex.hasMatch(nim)) {
-                      return 'NIM hanya boleh angka (6-15 digit)';
-                    }
-
+                    if (!nimRegex.hasMatch(value.trim())) return 'NIM hanya boleh angka (6-15 digit)';
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 16),
-
-                // Email
                 _buildTextField(
                   controller: _emailController,
                   label: 'Email',
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Email wajib diisi';
-                    }
-
-                    final email = value.trim();
-
-                    final emailRegex = RegExp(
-                      r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$',
-                    );
-
-                    if (!emailRegex.hasMatch(email)) {
-                      return 'Format email tidak valid';
-                    }
-
+                    if (value == null || value.trim().isEmpty) return 'Email wajib diisi';
+                    final emailRegex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
+                    if (!emailRegex.hasMatch(value.trim())) return 'Format email tidak valid';
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 16),
-
-                // Nomor HP
                 _buildTextField(
                   controller: _noHpController,
                   label: 'Nomor HP',
@@ -238,129 +150,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.phone,
                   hintText: '08xxxxxxxxxx',
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Nomor HP wajib diisi';
-                    }
-
-                    final phone = value.trim();
-
+                    if (value == null || value.trim().isEmpty) return 'Nomor HP wajib diisi';
                     final phoneRegex = RegExp(r'^[0-9]{9,13}$');
-
-                    if (!phoneRegex.hasMatch(phone)) {
-                      return 'Nomor HP tidak valid';
-                    }
-
+                    if (!phoneRegex.hasMatch(value.trim())) return 'Nomor HP tidak valid';
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 16),
-
-                // Password
                 _buildPasswordField(
                   controller: _passwordController,
                   label: 'Password',
                   obscure: _obscurePassword,
-                  toggle: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+                  toggle: () => setState(() => _obscurePassword = !_obscurePassword),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password wajib diisi';
-                    }
-
-                    if (value.length < 6) {
-                      return 'Password minimal 6 karakter';
-                    }
-
+                    if (value == null || value.isEmpty) return 'Password wajib diisi';
+                    if (value.length < 6) return 'Password minimal 6 karakter';
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 16),
-
-                // Konfirmasi Password
                 _buildPasswordField(
                   controller: _confirmPasswordController,
                   label: 'Konfirmasi Password',
                   obscure: _obscureConfirmPassword,
-                  toggle: () {
-                    setState(() {
-                      _obscureConfirmPassword =
-                          !_obscureConfirmPassword;
-                    });
-                  },
+                  toggle: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Konfirmasi password wajib diisi';
-                    }
-
-                    if (value != _passwordController.text) {
-                      return 'Password tidak sama';
-                    }
-
+                    if (value == null || value.isEmpty) return 'Konfirmasi password wajib diisi';
+                    if (value != _passwordController.text) return 'Password tidak sama';
                     return null;
                   },
                 ),
-
                 const SizedBox(height: 12),
-
-                // Syarat & Ketentuan
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Checkbox(
                       value: _agreeToTerms,
-                      onChanged: (value) {
-                        setState(() {
-                          _agreeToTerms = value ?? false;
-                        });
-                      },
+                      onChanged: (value) => setState(() => _agreeToTerms = value ?? false),
                       activeColor: AppColors.primaryBlue,
                     ),
-
                     const Expanded(
-                      child: Text(
-                        'Saya menyetujui Syarat & Ketentuan serta '
-                        'Kebijakan Privasi',
-                        style: TextStyle(
-                          fontSize: 13,
-                        ),
-                      ),
+                      child: Text('Saya menyetujui Syarat & Ketentuan serta Kebijakan Privasi', style: TextStyle(fontSize: 13)),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 12),
-
-                // Tombol Daftar
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleRegister,
                     child: _isLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Text(
-                            'Daftar',
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
+                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                        : const Text('Daftar', style: TextStyle(fontSize: 16)),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
-                // Sudah punya akun
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -369,13 +213,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: _isLoading
                           ? null
                           : () {
-                              Navigator.pop(context);
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                (route) => false,
+                              );
                             },
                       child: const Text('Masuk'),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 20),
               ],
             ),
@@ -396,12 +243,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hintText,
-        prefixIcon: Icon(icon),
-        border: const OutlineInputBorder(),
-      ),
+      decoration: InputDecoration(labelText: label, hintText: hintText, prefixIcon: Icon(icon), border: const OutlineInputBorder()),
       validator: validator,
     );
   }
@@ -421,11 +263,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         prefixIcon: const Icon(Icons.lock_outline),
         border: const OutlineInputBorder(),
         suffixIcon: IconButton(
-          icon: Icon(
-            obscure
-                ? Icons.visibility_outlined
-                : Icons.visibility_off_outlined,
-          ),
+          icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
           onPressed: toggle,
         ),
       ),
