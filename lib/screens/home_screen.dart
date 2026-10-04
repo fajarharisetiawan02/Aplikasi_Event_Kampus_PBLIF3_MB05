@@ -13,24 +13,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  String _selectedExploreCategory = 'Semua';
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   final List<Map<String, dynamic>> categories = [
-    {
-      'name': 'Musik',
-      'icon': Icons.music_note,
-    },
-    {
-      'name': 'Olahraga',
-      'icon': Icons.sports_soccer,
-    },
-    {
-      'name': 'Seminar',
-      'icon': Icons.school,
-    },
-    {
-      'name': 'Seni',
-      'icon': Icons.palette,
-    },
+    {'name': 'Musik', 'icon': Icons.music_note},
+    {'name': 'Olahraga', 'icon': Icons.sports_soccer},
+    {'name': 'Seminar', 'icon': Icons.school},
+    {'name': 'Seni', 'icon': Icons.palette},
   ];
 
   final List<Map<String, String>> events = [
@@ -39,26 +30,40 @@ class _HomeScreenState extends State<HomeScreen> {
       'date': '20 Oktober 2026',
       'location': 'Batam',
       'price': 'Rp150.000',
-      'image':
-          'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800',
+      'category': 'Musik',
+      'image': 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800',
     },
     {
-      'title': 'Seminar Teknologi',
+      'title': 'Seminar Teknologi AI',
       'date': '25 Oktober 2026',
       'location': 'Polibatam',
       'price': 'Gratis',
-      'image':
-          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+      'category': 'Seminar',
+      'image': 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
     },
     {
       'title': 'Turnamen Futsal Kampus',
       'date': '2 November 2026',
       'location': 'Batam',
       'price': 'Rp50.000',
-      'image':
-          'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=800',
+      'category': 'Olahraga',
+      'image': 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=800',
+    },
+    {
+      'title': 'Pameran Seni Modern',
+      'date': '10 November 2026',
+      'location': 'Batam Center',
+      'price': 'Rp25.000',
+      'category': 'Seni',
+      'image': 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=800',
     },
   ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,9 +77,24 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
+<<<<<<< Updated upstream
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: pages[_selectedIndex],
+=======
+      backgroundColor: const Color(0xFFF7F9FC),
+      body: SafeArea(
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            _buildHomeContent(),
+            _buildExploreContent(),
+            _buildPlaceholderPage('Halaman Tiket Saya', Icons.confirmation_num_outlined),
+            _buildPlaceholderPage('Halaman Riwayat Pesanan', Icons.shopping_bag_outlined),
+            _buildPlaceholderPage('Halaman Profil Pengguna', Icons.person_outline_rounded),
+          ],
+        ),
+>>>>>>> Stashed changes
       ),
       bottomNavigationBar: _buildBottomNavigation(),
     );
@@ -99,18 +119,321 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // =========================
+  // EXPLORE CONTENT
+  // =========================
+
+  Widget _buildExploreContent() {
+    final filterCategories = ['Semua', 'Musik', 'Olahraga', 'Seminar', 'Seni'];
+
+    // Filter daftar event berdasarkan pencarian & pilihan kategori
+    final filteredEvents = events.where((event) {
+      final matchesCategory = _selectedExploreCategory == 'Semua' ||
+          event['category'] == _selectedExploreCategory;
+      final matchesSearch = event['title']!
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          event['location']!
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
+
+    return CustomScrollView(
+      slivers: [
+        // Header Explore & Search Bar
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Jelajahi Event',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF172033),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Cari dan temukan event sesuai minatmu',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Field Pencarian Explore
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Cari event atau lokasi...',
+                      hintStyle: const TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 13,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF64748B),
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Horizontal Filter Chip Kategori
+                SizedBox(
+                  height: 38,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: filterCategories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final cat = filterCategories[index];
+                      final isSelected = _selectedExploreCategory == cat;
+                      return ChoiceChip(
+                        label: Text(cat),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              _selectedExploreCategory = cat;
+                            });
+                          }
+                        },
+                        selectedColor: const Color(0xFF2563EB),
+                        backgroundColor: Colors.white,
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : const Color(0xFF64748B),
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isSelected
+                                ? const Color(0xFF2563EB)
+                                : const Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        showCheckmark: false,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+        // Tampilan Jika Hasil Kosong
+        if (filteredEvents.isEmpty)
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              alignment: Alignment.center,
+              child: const Column(
+                children: [
+                  Icon(Icons.search_off_rounded, size: 48, color: Color(0xFF94A3B8)),
+                  SizedBox(height: 10),
+                  Text(
+                    'Event tidak ditemukan',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          // Grid Event Hasil Filter & Pencarian
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.70,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return _gridEventCard(filteredEvents[index]);
+                },
+                childCount: filteredEvents.length,
+              ),
+            ),
+          ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+      ],
+    );
+  }
+
+  Widget _gridEventCard(Map<String, String> event) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                Image.network(
+                  event['image']!,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: const Color(0xFFDBEAFE),
+                    child: const Icon(Icons.image_outlined, color: Color(0xFF2563EB)),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      event['category'] ?? '',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event['title']!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF172033),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  event['date']!,
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  event['price']!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // PLACEHOLDER TAB LAIN
+  // =========================
+
+  Widget _buildPlaceholderPage(String title, IconData icon) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 60, color: const Color(0xFF94A3B8)),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =========================
   // HOME CONTENT
   // =========================
 
   Widget _buildHomeContent() {
     return CustomScrollView(
       slivers: [
-        // HEADER
+        // Header
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Row(
               children: [
+<<<<<<< Updated upstream
                 // Logo asli (bukan ikon manual)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(14),
@@ -119,12 +442,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 46,
                     height: 46,
                     fit: BoxFit.cover,
+=======
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.event_available,
+                    color: Colors.white,
+                    size: 25,
+>>>>>>> Stashed changes
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
-                // Nama aplikasi
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,17 +481,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-
-                // Notification
                 Container(
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(13),
-                    border: Border.all(
-                      color: const Color(0xFFE5E7EB),
-                    ),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
                   child: IconButton(
                     onPressed: () {},
@@ -173,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // GREETING
+        // Greeting & Search Home
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
@@ -191,18 +520,70 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 5),
                 const Text(
                   'Mau ikut event apa hari ini?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
+                  style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                ),
+<<<<<<< Updated upstream
+
+=======
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    // Berpindah langsung ke tab Explore saat input diklik
+                    setState(() {
+                      _selectedIndex = 1;
+                    });
+                  },
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 16),
+                        const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Cari event...',
+                          style: TextStyle(color: Color(0xFF94A3B8)),
+                        ),
+                        const Spacer(),
+                        Container(
+                          margin: const EdgeInsets.all(8),
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2563EB),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.tune_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-
+>>>>>>> Stashed changes
               ],
             ),
           ),
         ),
 
-        // KATEGORI
+        // Kategori
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
@@ -212,18 +593,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 _sectionTitle(
                   title: 'Kategori',
                   action: 'Lihat semua',
-                  onTap: () {},
+                  onTap: () {
+                    setState(() {
+                      _selectedIndex = 1;
+                    });
+                  },
                 ),
-
                 const SizedBox(height: 14),
-
                 SizedBox(
                   height: 95,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: categories.length,
+<<<<<<< Updated upstream
                     separatorBuilder: (_, _) =>
                         const SizedBox(width: 12),
+=======
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+>>>>>>> Stashed changes
                     itemBuilder: (context, index) {
                       return _categoryItem(categories[index]);
                     },
@@ -234,14 +621,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // EVENT PILIHAN
+        // Event Pilihan
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
             child: _sectionTitle(
               title: 'Event Pilihan',
               action: 'Lihat semua',
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 1;
+                });
+              },
             ),
           ),
         ),
@@ -255,8 +646,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
                 itemCount: events.length,
+<<<<<<< Updated upstream
                 separatorBuilder: (_, _) =>
                     const SizedBox(width: 16),
+=======
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+>>>>>>> Stashed changes
                 itemBuilder: (context, index) {
                   return _eventCard(events[index]);
                 },
@@ -265,14 +660,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // EVENT TERBARU
+        // Event Terbaru
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
             child: _sectionTitle(
               title: 'Event Terbaru',
               action: 'Lihat semua',
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 1;
+                });
+              },
             ),
           ),
         ),
@@ -289,16 +688,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 20),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
       ],
     );
   }
-
-  // =========================
-  // SECTION TITLE
-  // =========================
 
   Widget _sectionTitle({
     required String title,
@@ -318,9 +711,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         GestureDetector(
           onTap: onTap,
-          child: const Text(
-            'Lihat semua',
-            style: TextStyle(
+          child: Text(
+            action,
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.primaryBlue,
@@ -331,19 +724,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // =========================
-  // CATEGORY
-  // =========================
-
   Widget _categoryItem(Map<String, dynamic> category) {
-    return Container(
-      width: 82,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedExploreCategory = category['name'];
+          _selectedIndex = 1;
+        });
+      },
+      child: Container(
+        width: 82,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
         ),
+<<<<<<< Updated upstream
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -359,25 +755,38 @@ class _HomeScreenState extends State<HomeScreen> {
               category['icon'],
               color: AppColors.primaryBlue,
               size: 22,
+=======
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDBEAFE),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Icon(
+                category['icon'],
+                color: const Color(0xFF2563EB),
+                size: 22,
+              ),
             ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            category['name'],
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
+            const SizedBox(height: 7),
+            Text(
+              category['name'],
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF334155),
+              ),
+>>>>>>> Stashed changes
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-
-  // =========================
-  // EVENT CARD BESAR
-  // =========================
 
   Widget _eventCard(Map<String, String> event) {
     final bool isGratis = event['price'] == 'Gratis';
@@ -406,6 +815,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 155,
                 width: double.infinity,
                 fit: BoxFit.cover,
+<<<<<<< Updated upstream
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 155,
@@ -417,8 +827,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 },
+=======
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 155,
+                  color: const Color(0xFFDBEAFE),
+                  child: const Icon(
+                    Icons.image_outlined,
+                    size: 50,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+>>>>>>> Stashed changes
               ),
-
               Positioned(
                 top: 12,
                 right: 12,
@@ -463,7 +883,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             child: Column(
@@ -479,9 +898,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppColors.textDark,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Row(
                   children: [
                     const Icon(
@@ -501,9 +918,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 4),
-
                 Row(
                   children: [
                     const Icon(
@@ -540,10 +955,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // =========================
-  // EVENT CARD KECIL
-  // =========================
-
   Widget _smallEventCard(Map<String, String> event) {
     final bool isGratis = event['price'] == 'Gratis';
 
@@ -572,6 +983,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 105,
               height: 105,
               fit: BoxFit.cover,
+<<<<<<< Updated upstream
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   width: 105,
@@ -583,9 +995,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               },
+=======
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 105,
+                height: 105,
+                color: const Color(0xFFDBEAFE),
+                child: const Icon(Icons.image_outlined, color: Color(0xFF2563EB)),
+              ),
+>>>>>>> Stashed changes
             ),
           ),
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -603,19 +1022,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.textDark,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   Text(
                     event['date']!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF64748B),
-                    ),
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
-
                   const SizedBox(height: 4),
-
                   Text(
                     event['price']!,
                     style: TextStyle(
@@ -630,13 +1042,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
           const Padding(
             padding: EdgeInsets.only(right: 12),
-            child: Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF94A3B8),
-            ),
+            child: Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
           ),
         ],
       ),
@@ -651,18 +1059,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE5E7EB),
-          ),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -729,8 +1130,7 @@ class _HomeScreenState extends State<HomeScreen> {
               label,
               style: TextStyle(
                 fontSize: 10,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected
                     ? AppColors.primaryBlue
                     : const Color(0xFF94A3B8),
