@@ -1,110 +1,59 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:http/http.dart' as http;
+
 import '../models/user_model.dart';
 
-// masih dummy, belum konek backend. akun baru dari register disimpan ke
-// SharedPreferences (local storage HP) biar tetap ada walau app ditutup
-// total, bukan cuma selama app lagi jalan.
-
 class AuthService {
-  static const String baseUrl = "https://api.contoh-eventapp.com/v1";
-  static const String _prefsKey = 'registered_accounts';
-  static bool _loaded = false;
+  // emulator Android: 10.0.2.2, HP asli: IP laptop, Chrome/Windows: localhost
+  static const String baseUrl = 'http://localhost:8000/api';
+  static const Duration _timeout = Duration(seconds: 15);
 
-  static final Map<String, _DummyAccount> _dummyUsers = {
-    'user@kampus.ac.id': _DummyAccount(
-      password: 'user123',
-      user: UserModel(
-        id: '1',
-        nama: 'Fajar Hari Setiawan',
-        email: 'user@kampus.ac.id',
-        noHp: '081234567890',
-        nim: '21051234',
-        roles: const ['user'],
-        isAdmin: false,
-        token: 'dummy-token-user',
-      ),
-    ),
-    'eo@kampus.ac.id': _DummyAccount(
-      password: 'event123',
-      user: UserModel(
-        id: '2',
-        nama: 'Muhammad Rafie (Event Organizer)',
-        email: 'eo@kampus.ac.id',
-        noHp: '081234567891',
-        nim: '20051987',
-        roles: const ['user', 'event_organizer'],
-        isAdmin: false,
-        token: 'dummy-token-eo',
-      ),
-    ),
-    'admin@kampus.ac.id': _DummyAccount(
-      password: 'admin123',
-      user: UserModel(
-        id: '3',
-        nama: 'Admin Kampus',
-        email: 'admin@kampus.ac.id',
-        noHp: '081234567892',
-        nim: null,
-        roles: const ['user'],
-        isAdmin: true,
-        token: 'dummy-token-admin',
-      ),
-    ),
+  static UserModel? currentUser;
+  static String? _token;
+
+  static Map<String, String> get _headers => {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    if (_token != null) 'Authorization': 'Bearer $_token',
   };
 
-  // ambil akun hasil register sebelumnya dari local storage, sekali aja.
-  static Future<void> _loadPersistedAccounts() async {
-    if (_loaded) return;
-    _loaded = true;
+  static Future<Map<String, dynamic>> _send(
+    Future<http.Response> Function() request,
+  ) async {
+    try {
+      final res = await request().timeout(_timeout);
+      final body = res.body.isNotEmpty
+          ? jsonDecode(res.body) as Map<String, dynamic>
+          : <String, dynamic>{};
 
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
-    if (raw == null) return;
-
-    final Map<String, dynamic> decoded = jsonDecode(raw);
-    decoded.forEach((email, value) {
-      final data = Map<String, dynamic>.from(value);
-      _dummyUsers[email] = _DummyAccount(
-        password: data['password'],
-        user: UserModel.fromJson(Map<String, dynamic>.from(data['user'])),
-      );
-    });
-  }
-
-  static Future<void> _persistAccount(String email, _DummyAccount account) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
-    final Map<String, dynamic> decoded = raw != null ? jsonDecode(raw) : {};
-
-    decoded[email] = {
-      'password': account.password,
-      'user': {
-        ...account.user.toJson(),
-        'token': account.user.token,
-      },
-    };
-
-    await prefs.setString(_prefsKey, jsonEncode(decoded));
-  }
-
-  static Future<UserModel> login({
-    required String email,
-    required String password,
-  }) async {
-    await _loadPersistedAccounts();
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    final account = _dummyUsers[email.trim().toLowerCase()];
-    if (account == null) {
-      throw AuthException('Email tidak terdaftar. Coba: user@kampus.ac.id');
+      if (res.statusCode >= 200 && res.statusCode < 300) return body;
+      throw AuthException(_errorMessage(body));
+    } on AuthException {
+      rethrow;
+    } on TimeoutException {
+      throw AuthException('Server tidak merespons. Coba lagi.');
+    } on FormatException {
+      throw AuthException('Respons server tidak valid.');
+    } catch (_) {
+      throw AuthException('Tidak dapat terhubung ke server.');
     }
-    if (account.password != password) {
-      throw AuthException('Password salah.');
-    }
-    return account.user;
   }
 
+  static String _errorMessage(Map<String, dynamic> body) {
+    final errors = body['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final first = errors.values.first;
+      if (first is List && first.isNotEmpty) return first.first.toString();
+    }
+    return body['message']?.toString() ?? 'Terjadi kesalahan.';
+  }
+
+  static UserModel _parseUser(Map<String, dynamic> body) =>
+      UserModel.fromJson(Map<String, dynamic>.from(body['data']));
+
+  // CREATE
   static Future<UserModel> register({
     required String nama,
     required String email,
@@ -112,37 +61,106 @@ class AuthService {
     required String noHp,
     required String nim,
   }) async {
-    await _loadPersistedAccounts();
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    final emailKey = email.trim().toLowerCase();
-    if (_dummyUsers.containsKey(emailKey)) {
-      throw AuthException('Email sudah terdaftar. Gunakan email lain.');
-    }
-
-    final newUser = UserModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      nama: nama,
-      email: email,
-      noHp: noHp,
-      nim: nim,
-      roles: const ['user'],
-      isAdmin: false,
-      token: 'dummy-token-new-user',
+    final body = await _send(
+      () => http.post(
+        Uri.parse('$baseUrl/register'),
+        headers: _headers,
+        body: jsonEncode({
+          'nama': nama,
+          'email': email,
+          'password': password,
+          'no_hp': noHp,
+          'nim': nim,
+        }),
+      ),
     );
-
-    final account = _DummyAccount(password: password, user: newUser);
-    _dummyUsers[emailKey] = account;
-    await _persistAccount(emailKey, account);
-
-    return newUser;
+    return _parseUser(body);
   }
-}
 
-class _DummyAccount {
-  final String password;
-  final UserModel user;
-  _DummyAccount({required this.password, required this.user});
+  // READ
+  static Future<UserModel> login({
+    required String email,
+    required String password,
+  }) async {
+    final body = await _send(
+      () => http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: _headers,
+        body: jsonEncode({'email': email, 'password': password}),
+      ),
+    );
+    final user = _parseUser(body);
+    _token = user.token;
+    currentUser = user;
+    return user;
+  }
+
+  static Future<UserModel> fetchProfile() async {
+    final body = await _send(
+      () => http.get(Uri.parse('$baseUrl/profile'), headers: _headers),
+    );
+    return currentUser = _parseUser(body);
+  }
+
+  // UPDATE
+  static Future<UserModel> updateProfile({
+    required String nama,
+    required String nim,
+    required String noHp,
+  }) async {
+    final body = await _send(
+      () => http.put(
+        Uri.parse('$baseUrl/profile'),
+        headers: _headers,
+        body: jsonEncode({'nama': nama, 'nim': nim, 'no_hp': noHp}),
+      ),
+    );
+    return currentUser = _parseUser(body);
+  }
+
+  static Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _send(
+      () => http.put(
+        Uri.parse('$baseUrl/password'),
+        headers: _headers,
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        }),
+      ),
+    );
+  }
+
+  // DELETE
+  static Future<void> deleteAccount({required String password}) async {
+    await _send(
+      () => http.delete(
+        Uri.parse('$baseUrl/profile'),
+        headers: _headers,
+        body: jsonEncode({'password': password}),
+      ),
+    );
+    _clearSession();
+  }
+
+  static Future<void> logout() async {
+    try {
+      await _send(
+        () => http.post(Uri.parse('$baseUrl/logout'), headers: _headers),
+      );
+    } on AuthException {
+      // token sudah tidak valid di server, tetap keluar di sisi aplikasi
+    }
+    _clearSession();
+  }
+
+  static void _clearSession() {
+    _token = null;
+    currentUser = null;
+  }
 }
 
 class AuthException implements Exception {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import 'ticket_screen.dart';
-import 'explore_screen.dart'; // <-- 1. Import ExploreScreen di sini
+import 'explore_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String? userName;
@@ -40,33 +40,31 @@ class _HomeScreenState extends State<HomeScreen> {
       'date': '20 Oktober 2026',
       'location': 'Batam',
       'price': 'Rp150.000',
-      'image':
-          'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800',
+      'image': 'assets/images/festival_musik.png',
     },
     {
       'title': 'Seminar Teknologi',
       'date': '25 Oktober 2026',
       'location': 'Polibatam',
       'price': 'Gratis',
-      'image':
-          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+      'image': 'assets/images/seminar_teknologi.png',
     },
     {
       'title': 'Turnamen Futsal Kampus',
       'date': '2 November 2026',
       'location': 'Batam',
       'price': 'Rp50.000',
-      'image':
-          'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=800',
+      'image': 'assets/images/futsal_kampus.png',
     },
   ];
 
   @override
   Widget build(BuildContext context) {
-    // 2. Sambungkan ExploreScreen ke index 1 pada Bottom Navigation
+    // Daftar halaman sesuai urutan bottom navigation.
+    // Home & Tiket sudah dibuat sungguhan, sisanya masih placeholder.
     final List<Widget> pages = [
       _buildHomeContent(),         // index 0: Home
-      const ExploreScreen(),       // index 1: Explore (Sudah tersambung!)
+      const ExploreScreen(),       // index 1: Explore
       const TicketScreen(),        // index 2: Tiket
       _placeholderPage('Profil', Icons.person_rounded), // index 3: Profil
     ];
@@ -206,7 +204,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: 'Kategori',
                   action: 'Lihat semua',
                   onTap: () {
-                    // Opsional: Jika tombol "Lihat semua" diklik, bisa pindah tab ke Explore (index 1)
                     setState(() {
                       _selectedIndex = 1;
                     });
@@ -403,22 +400,11 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Stack(
             children: [
-              Image.network(
+              Image.asset(
                 event['image']!,
                 height: 155,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 155,
-                    color: AppColors.primaryBlue.withValues(alpha: 0.1),
-                    child: const Icon(
-                      Icons.image_outlined,
-                      size: 50,
-                      color: AppColors.primaryBlue,
-                    ),
-                  );
-                },
               ),
               Positioned(
                 top: 12,
@@ -561,22 +547,11 @@ class _HomeScreenState extends State<HomeScreen> {
               topLeft: Radius.circular(16),
               bottomLeft: Radius.circular(16),
             ),
-            child: Image.network(
+            child: Image.asset(
               event['image']!,
               width: 105,
               height: 105,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 105,
-                  height: 105,
-                  color: AppColors.primaryBlue.withValues(alpha: 0.1),
-                  child: const Icon(
-                    Icons.image_outlined,
-                    color: AppColors.primaryBlue,
-                  ),
-                );
-              },
             ),
           ),
           Expanded(
