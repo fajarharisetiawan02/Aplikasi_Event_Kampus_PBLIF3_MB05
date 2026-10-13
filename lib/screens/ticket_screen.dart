@@ -3,6 +3,7 @@ import '../models/ticket_model.dart';
 import '../services/ticket_service.dart';
 import '../utils/app_colors.dart';
 import 'ticket_detail_screen.dart';
+import '../widgets/event_image.dart';
 
 class TicketScreen extends StatefulWidget {
   const TicketScreen({super.key});
@@ -69,12 +70,13 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
                 return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
-                return Center(child: Text('Gagal memuat tiket: ${snapshot.error}'));
+                return Center(child: Text('Gagal memuat tiket: ${snapshot.error}', textAlign: TextAlign.center));
               }
 
               final allTickets = snapshot.data ?? [];
-              final activeTickets = allTickets.where((t) => t.status == TicketStatus.aktif).toList();
-              final historyTickets = allTickets.where((t) => t.status != TicketStatus.aktif).toList();
+              bool isActive(TicketModel t) => t.status == TicketStatus.aktif || t.status == TicketStatus.menunggu;
+              final activeTickets = allTickets.where(isActive).toList();
+              final historyTickets = allTickets.where((t) => !isActive(t)).toList();
 
               return TabBarView(
                 controller: _tabController,
@@ -114,10 +116,17 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
 
   Widget _ticketCard(TicketModel ticket) {
     final isActive = ticket.status == TicketStatus.aktif;
+    final isWaiting = ticket.status == TicketStatus.menunggu;
+    final badgeColor = isActive
+        ? AppColors.primaryBlue
+        : isWaiting
+            ? AppColors.accentOrange
+            : Colors.grey.shade600;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => TicketDetailScreen(ticket: ticket)));
+      onTap: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => TicketDetailScreen(ticket: ticket)));
+        if (mounted) setState(() => _futureTickets = TicketService.getMyTickets());
       },
       child: Container(
         decoration: BoxDecoration(
@@ -129,18 +138,7 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)),
-              child: Image.network(
-                ticket.eventImage,
-                width: 90,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 90,
-                  height: 100,
-                  color: AppColors.primaryBlue.withValues(alpha: 0.1),
-                  child: Icon(Icons.image_outlined, color: AppColors.primaryBlue),
-                ),
-              ),
+              child: EventImage(url: ticket.eventImage, width: 90, height: 100),
             ),
             Expanded(
               child: Padding(
@@ -173,12 +171,12 @@ class _TicketScreenState extends State<TicketScreen> with SingleTickerProviderSt
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: isActive ? AppColors.primaryBlue.withValues(alpha: 0.1) : Colors.grey.shade200,
+                        color: badgeColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         ticket.statusLabel,
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: isActive ? AppColors.primaryBlue : Colors.grey.shade600),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: badgeColor),
                       ),
                     ),
                   ],

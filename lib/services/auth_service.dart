@@ -1,17 +1,29 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/user_model.dart';
 
 class AuthService {
-  // emulator Android: 10.0.2.2, HP asli: IP laptop, Chrome/Windows: localhost
-  static const String baseUrl = 'http://localhost:8000/api';
+  // Diisi saat run di HP asli: --dart-define=API_HOST=IP-LAPTOP
+  static const String _host = String.fromEnvironment('API_HOST');
+
+  static String get baseUrl {
+    if (_host.isNotEmpty) return 'http://$_host:8000/api'; // HP asli
+    if (kIsWeb) return 'http://localhost:8000/api'; // Chrome
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000/api'; // emulator
+    }
+    return 'http://localhost:8000/api';
+  }
+
   static const Duration _timeout = Duration(seconds: 15);
 
   static UserModel? currentUser;
   static String? _token;
+  static String? get token => _token;
 
   static Map<String, String> get _headers => {
     'Accept': 'application/json',

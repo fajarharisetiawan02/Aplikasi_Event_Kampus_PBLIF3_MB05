@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
 import 'register_screen.dart';
@@ -43,13 +44,19 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
-          pageBuilder: (_, __, ___) => HomeScreen(userName: user.nama),
-          transitionsBuilder: (_, animation, __, child) {
-            final curved = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+          pageBuilder: (_, _, _) => HomeScreen(userName: user.nama),
+          transitionsBuilder: (_, animation, _, child) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            );
             return FadeTransition(
               opacity: curved,
               child: SlideTransition(
-                position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(curved),
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.04),
+                  end: Offset.zero,
+                ).animate(curved),
                 child: child,
               ),
             );
@@ -64,20 +71,32 @@ class _LoginScreenState extends State<LoginScreen> {
           elevation: 6,
           margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           duration: const Duration(seconds: 3),
           content: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(5),
-                decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-                child: const Icon(Icons.check_rounded, color: Colors.white, size: 18),
+                decoration: const BoxDecoration(
+                  color: Colors.white24,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Login berhasil',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -105,20 +124,46 @@ class _LoginScreenState extends State<LoginScreen> {
             child: ListView(
               children: [
                 const SizedBox(height: 40),
-                Center(child: Image.asset('assets/images/logo.png', width: 110, height: 110)),
+                Center(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 110,
+                    height: 110,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                const Text('Masuk', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                const Text(
+                  'Masuk',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                const Text('Masuk untuk mulai memesan tiket event favoritmu', style: TextStyle(color: Colors.grey)),
+                const Text(
+                  'Masuk untuk mulai mendaftar event kampus favoritmu',
+                  style: TextStyle(color: Colors.grey),
+                ),
                 const SizedBox(height: 32),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined), border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Email wajib diisi';
-                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!emailRegex.hasMatch(value.trim())) return 'Format email tidak valid';
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Email wajib diisi';
+                    }
+                    final emailRegex = RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    );
+                    if (!emailRegex.hasMatch(value.trim())) {
+                      return 'Format email tidak valid';
+                    }
                     return null;
                   },
                 ),
@@ -131,19 +176,29 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Password wajib diisi';
+                    if (value == null || value.isEmpty) {
+                      return 'Password wajib diisi';
+                    }
                     if (value.length < 6) return 'Password minimal 6 karakter';
                     return null;
                   },
                 ),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: TextButton(onPressed: () {}, child: const Text('Lupa password?')),
+                  child: TextButton(
+                    onPressed: () {},
+                    child: const Text('Lupa password?'),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -151,7 +206,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleLogin,
                     child: _isLoading
-                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
                         : const Text('Masuk', style: TextStyle(fontSize: 16)),
                   ),
                 ),
@@ -162,7 +224,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text('Belum punya akun?'),
                     TextButton(
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        );
                       },
                       child: const Text('Daftar di sini'),
                     ),

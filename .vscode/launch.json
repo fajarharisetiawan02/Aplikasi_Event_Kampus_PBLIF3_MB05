@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Aplikasi (otomatis)",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "HP asli (hotspot)",
+      "request": "launch",
+      "type": "dart",
+      "args": ["--dart-define=API_HOST=10.254.162.27"]
+    }
+  ]
+}

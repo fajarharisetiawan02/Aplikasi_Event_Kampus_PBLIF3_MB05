@@ -76,10 +76,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 TextFormField(
                   controller: _nimController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'NIM', prefixIcon: Icon(Icons.badge_outlined), border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'NIM / NIP (opsional)', prefixIcon: Icon(Icons.badge_outlined), border: OutlineInputBorder()),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'NIM wajib diisi';
-                    if (!RegExp(r'^[0-9]{6,15}$').hasMatch(value.trim())) return 'NIM hanya boleh angka (6-15 digit)';
+                    if (value == null || value.trim().isEmpty) return null;
+                    if (!RegExp(r'^[0-9]{6,15}$').hasMatch(value.trim())) return 'Hanya boleh angka (6-15 digit)';
                     return null;
                   },
                 ),

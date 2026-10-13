@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../utils/app_colors.dart';
+import '../utils/app_nav.dart';
 import 'edit_profile_screen.dart';
 import 'login_screen.dart';
 
@@ -63,6 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Hapus Akun'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -116,6 +118,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     passwordController.dispose();
   }
 
+  void _soon(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text), behavior: SnackBarBehavior.floating),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = _user;
@@ -129,65 +137,286 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
         children: [
-          const Text('Profil', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          _topBar(),
+          const SizedBox(height: 18),
+          _profileCard(user),
+          const SizedBox(height: 14),
+          _organizerCard(user),
+          const SizedBox(height: 22),
+          _sectionLabel('Aktivitas'),
+          _card([
+            _menuTile(
+              icon: Icons.confirmation_num_outlined,
+              title: 'Tiket Saya',
+              onTap: () => AppNav.tabRequest.value = 2,
+            ),
+            _divider(),
+            _menuTile(
+              icon: Icons.favorite_border_rounded,
+              title: 'Event Favorit',
+              onTap: () => _soon('Event favorit segera hadir'),
+            ),
+            _divider(),
+            _menuTile(
+              icon: Icons.notifications_none_rounded,
+              title: 'Notifikasi',
+              onTap: () => _soon('Notifikasi segera hadir'),
+            ),
+          ]),
+          const SizedBox(height: 22),
+          _sectionLabel('Akun'),
+          _card([
+            _menuTile(
+              icon: Icons.edit_outlined,
+              title: 'Edit Profil',
+              onTap: _edit,
+            ),
+            _divider(),
+            _menuTile(
+              icon: Icons.delete_outline_rounded,
+              title: 'Hapus Akun',
+              color: Colors.red,
+              onTap: _deleteAccount,
+            ),
+            _divider(),
+            _menuTile(
+              icon: Icons.logout_rounded,
+              title: 'Keluar',
+              showArrow: false,
+              onTap: _logout,
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // BAGIAN ATAS
+  // =========================
+
+  Widget _topBar() {
+    return Row(
+      children: [
+        const Expanded(
+          child: Text(
+            'Profil',
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.textDark),
+          ),
+        ),
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: IconButton(
+            onPressed: () => _soon('Pengaturan segera hadir'),
+            icon: const Icon(Icons.settings_outlined, color: AppColors.textDark, size: 22),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _roleTitle(UserModel user) {
+    if (user.isAdmin) return 'Admin';
+    if (user.isEventOrganizer) return 'Event Organizer';
+    return 'Mahasiswa';
+  }
+
+  Widget _profileCard(UserModel user) {
+    final nim = (user.nim == null || user.nim!.isEmpty) ? null : user.nim;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.primaryBlue,
+            child: Text(
+              user.nama.isNotEmpty ? user.nama[0].toUpperCase() : '?',
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.primaryBlue,
-                  child: Text(
-                    user.nama.isNotEmpty ? user.nama[0].toUpperCase() : '?',
-                    style: const TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
+                Text(
+                  user.nama,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
                 ),
-                const SizedBox(height: 12),
-                Text(user.nama, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text(user.email, style: const TextStyle(color: Colors.grey)),
-                const Divider(height: 28),
-                _infoRow(Icons.badge_outlined, 'NIM', user.nim ?? '-'),
-                _infoRow(Icons.phone_outlined, 'No. HP', user.noHp ?? '-'),
+                const SizedBox(height: 3),
+                Text(
+                  user.email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  [_roleTitle(user), if (nim != null) 'NIM $nim'].join(' • '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _menuTile(Icons.edit_outlined, 'Edit Profil', _edit),
-          _menuTile(Icons.logout, 'Keluar', _logout),
-          _menuTile(Icons.delete_outline, 'Hapus Akun', _deleteAccount, color: Colors.red),
+          const SizedBox(width: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: _edit,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryBlue),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  Widget _organizerCard(UserModel user) {
+    final bool isOrganizer = user.isEventOrganizer || user.isAdmin;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _soon(
+          isOrganizer ? 'Mode penyelenggara segera hadir' : 'Pengajuan jadi penyelenggara segera hadir',
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: _cardDecoration(),
+          child: Row(
+            children: [
+              _iconBubble(Icons.storefront_outlined, AppColors.primaryBlue),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isOrganizer ? 'Mode penyelenggara' : 'Jadi penyelenggara',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isOrganizer
+                          ? 'Kelola event yang kamu buat'
+                          : 'Ajukan akunmu untuk membuat event',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =========================
+  // KOMPONEN
+  // =========================
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 10,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: AppColors.primaryBlue),
-          const SizedBox(width: 12),
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          const Spacer(),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
       ),
     );
   }
 
-  Widget _menuTile(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+  Widget _card(List<Widget> children) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-      child: ListTile(
-        leading: Icon(icon, color: color ?? AppColors.primaryBlue),
-        title: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w500)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-        onTap: onTap,
+      decoration: _cardDecoration(),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _divider() {
+    return const Divider(height: 1, indent: 70, endIndent: 16, color: Color(0xFFF1F5F9));
+  }
+
+  Widget _iconBubble(IconData icon, Color color) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, size: 20, color: color),
+    );
+  }
+
+  Widget _menuTile({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color? color,
+    bool showArrow = true,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            _iconBubble(icon, color ?? AppColors.primaryBlue),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: color ?? AppColors.textDark,
+                ),
+              ),
+            ),
+            if (showArrow) const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+          ],
+        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="aplikasi_event_kampus_pblfi3_mb05"
+        android:label="EventIn"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

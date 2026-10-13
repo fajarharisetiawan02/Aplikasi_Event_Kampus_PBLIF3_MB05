@@ -119,13 +119,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
                 _buildTextField(
                   controller: _nimController,
-                  label: 'NIM (Nomor Induk Mahasiswa)',
+                  label: 'NIM / NIP (opsional)',
                   icon: Icons.badge_outlined,
                   keyboardType: TextInputType.number,
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'NIM wajib diisi';
+                    if (value == null || value.trim().isEmpty) return null;
                     final nimRegex = RegExp(r'^[0-9]{6,15}$');
-                    if (!nimRegex.hasMatch(value.trim())) return 'NIM hanya boleh angka (6-15 digit)';
+                    if (!nimRegex.hasMatch(value.trim())) return 'Hanya boleh angka (6-15 digit)';
                     return null;
                   },
                 ),
