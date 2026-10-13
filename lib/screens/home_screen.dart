@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
 import 'ticket_screen.dart';
 import 'explore_screen.dart';
+import 'profile_screen.dart';
+import 'event_detail_screen.dart';
+import '../models/event_model.dart';
+import '../services/auth_service.dart' show AuthException;
+import '../services/event_service.dart';
+import '../utils/app_nav.dart';
+import '../widgets/event_image.dart';
 
 class HomeScreen extends StatefulWidget {
   final String? userName;
@@ -34,29 +41,51 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
-  final List<Map<String, String>> events = [
-    {
-      'title': 'Festival Musik Batam',
-      'date': '20 Oktober 2026',
-      'location': 'Batam',
-      'price': 'Rp150.000',
-      'image': 'assets/images/festival_musik.png',
-    },
-    {
-      'title': 'Seminar Teknologi',
-      'date': '25 Oktober 2026',
-      'location': 'Polibatam',
-      'price': 'Gratis',
-      'image': 'assets/images/seminar_teknologi.png',
-    },
-    {
-      'title': 'Turnamen Futsal Kampus',
-      'date': '2 November 2026',
-      'location': 'Batam',
-      'price': 'Rp50.000',
-      'image': 'assets/images/futsal_kampus.png',
-    },
-  ];
+  List<EventModel> _events = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    AppNav.tabRequest.addListener(_onTabRequest);
+    _loadEvents();
+  }
+
+  @override
+  void dispose() {
+    AppNav.tabRequest.removeListener(_onTabRequest);
+    super.dispose();
+  }
+
+  void _onTabRequest() {
+    final index = AppNav.tabRequest.value;
+    if (index < 0) return;
+    AppNav.tabRequest.value = -1;
+    if (mounted) setState(() => _selectedIndex = index);
+  }
+
+  Future<void> _loadEvents() async {
+    try {
+      final events = await EventService.getEvents();
+      if (!mounted) return;
+      setState(() {
+        _events = events;
+        _error = null;
+        _loading = false;
+      });
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    }
+  }
+
+  void _openDetail(EventModel event) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _buildHomeContent(),         // index 0: Home
       const ExploreScreen(),       // index 1: Explore
       const TicketScreen(),        // index 2: Tiket
-      _placeholderPage('Profil', Icons.person_rounded), // index 3: Profil
+      const ProfileScreen(), // index 3: Profil
     ];
 
     return Scaffold(
@@ -101,7 +130,38 @@ class _HomeScreenState extends State<HomeScreen> {
   // =========================
 
   Widget _buildHomeContent() {
-    return CustomScrollView(
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 56, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            Text(_error!, style: const TextStyle(color: Colors.grey)),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _loading = true;
+                  _error = null;
+                });
+                _loadEvents();
+              },
+              child: const Text('Coba lagi'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadEvents,
+      child: CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         // HEADER
         SliverToBoxAdapter(
@@ -250,10 +310,13 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 scrollDirection: Axis.horizontal,
-                itemCount: events.length,
+                itemCount: _events.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 16),
                 itemBuilder: (context, index) {
-                  return _eventCard(events[index]);
+                  return GestureDetector(
+                    onTap: () => _openDetail(_events[index]),
+                    child: _eventCard(_events[index]),
+                  );
                 },
               ),
             ),
@@ -281,10 +344,13 @@ class _HomeScreenState extends State<HomeScreen> {
             (context, index) {
               return Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-                child: _smallEventCard(events[index]),
+                child: GestureDetector(
+                  onTap: () => _openDetail(_events[index]),
+                  child: _smallEventCard(_events[index]),
+                ),
               );
             },
-            childCount: events.length,
+            childCount: _events.length,
           ),
         ),
 
@@ -292,6 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SizedBox(height: 20),
         ),
       ],
+      ),
     );
   }
 
@@ -378,8 +445,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // EVENT CARD BESAR
   // =========================
 
-  Widget _eventCard(Map<String, String> event) {
-    final bool isGratis = event['price'] == 'Gratis';
+  Widget _eventCard(EventModel event) {
+    final bool isGratis = event.isGratis;
 
     return Container(
       width: 290,
@@ -400,11 +467,10 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Stack(
             children: [
-              Image.asset(
-                event['image']!,
+              EventImage(
+                url: event.bannerUrl,
                 height: 155,
                 width: double.infinity,
-                fit: BoxFit.cover,
               ),
               Positioned(
                 top: 12,
@@ -454,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  event['title']!,
+                  event.judul,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -474,7 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 5),
                     Expanded(
                       child: Text(
-                        event['date']!,
+                        event.tanggalLabel,
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF64748B),
@@ -493,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      event['location']!,
+                      event.lokasi,
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF64748B),
@@ -501,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const Spacer(),
                     Text(
-                      event['price']!,
+                      event.hargaLabel,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -524,8 +590,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // EVENT CARD KECIL
   // =========================
 
-  Widget _smallEventCard(Map<String, String> event) {
-    final bool isGratis = event['price'] == 'Gratis';
+  Widget _smallEventCard(EventModel event) {
+    final bool isGratis = event.isGratis;
 
     return Container(
       height: 105,
@@ -547,11 +613,10 @@ class _HomeScreenState extends State<HomeScreen> {
               topLeft: Radius.circular(16),
               bottomLeft: Radius.circular(16),
             ),
-            child: Image.asset(
-              event['image']!,
+            child: EventImage(
+              url: event.bannerUrl,
               width: 105,
               height: 105,
-              fit: BoxFit.cover,
             ),
           ),
           Expanded(
@@ -562,7 +627,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    event['title']!,
+                    event.judul,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -573,7 +638,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    event['date']!,
+                    event.tanggalLabel,
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF64748B),
@@ -581,7 +646,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    event['price']!,
+                    event.hargaLabel,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import '../models/event_model.dart';
+import '../services/auth_service.dart' show AuthException;
+import '../services/event_service.dart';
+import '../widgets/event_image.dart';
+import 'event_detail_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -19,56 +24,41 @@ class _ExploreScreenState extends State<ExploreScreen> {
     'Teknologi',
   ];
 
-  final List<Map<String, dynamic>> events = [
-    {
-      'title': 'Festival Musik Batam',
-      'category': 'Musik',
-      'date': '20 Oktober 2026',
-      'location': 'Batam',
-      'price': 'Rp150.000',
-      'image': 'assets/images/festival_musik.png',
-    },
-    {
-      'title': 'Seminar Teknologi 2026',
-      'category': 'Teknologi',
-      'date': '25 Oktober 2026',
-      'location': 'Polibatam',
-      'price': 'Gratis',
-      'image': 'assets/images/seminar_teknologi.png',
-    },
-    {
-      'title': 'Turnamen Futsal Kampus',
-      'category': 'Olahraga',
-      'date': '2 November 2026',
-      'location': 'Batam',
-      'price': 'Rp50.000',
-      'image': 'assets/images/futsal_kampus.png',
-    },
-    {
-      'title': 'Workshop UI/UX Design',
-      'category': 'Teknologi',
-      'date': '5 November 2026',
-      'location': 'Polibatam',
-      'price': 'Rp25.000',
-      'image': 'assets/images/seminar_teknologi.png',
-    },
-    {
-      'title': 'Pameran Seni Mahasiswa',
-      'category': 'Seni',
-      'date': '10 November 2026',
-      'location': 'Batam',
-      'price': 'Gratis',
-      'image': 'assets/images/festival_musik.png',
-    },
-  ];
+  List<EventModel> events = [];
+  bool _loading = true;
+  String? _error;
 
-  List<Map<String, dynamic>> get filteredEvents {
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    try {
+      final result = await EventService.getEvents();
+      if (!mounted) return;
+      setState(() {
+        events = result;
+        _error = null;
+        _loading = false;
+      });
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    }
+  }
+
+  List<EventModel> get filteredEvents {
     if (selectedCategory == 'Semua') {
       return events;
     }
 
     return events
-        .where((event) => event['category'] == selectedCategory)
+        .where((event) => event.kategori == selectedCategory)
         .toList();
   }
 
@@ -300,8 +290,39 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
 
             // EVENT LIST
-            filteredEvents.isEmpty
-                ? SliverToBoxAdapter(
+            if (_loading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 70),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              )
+            else if (_error != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 70),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.cloud_off_rounded, size: 48, color: Color(0xFF94A3B8)),
+                      const SizedBox(height: 12),
+                      Text(_error!, style: const TextStyle(color: Color(0xFF64748B))),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _loading = true;
+                            _error = null;
+                          });
+                          _loadEvents();
+                        },
+                        child: const Text('Coba lagi'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (filteredEvents.isEmpty)
+              SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.only(top: 70),
                       child: Column(
@@ -338,7 +359,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       ),
                     ),
                   )
-                : SliverPadding(
+            else
+              SliverPadding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                     ),
@@ -349,8 +371,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             padding: const EdgeInsets.only(
                               bottom: 16,
                             ),
-                            child: _eventCard(
-                              filteredEvents[index],
+                            child: GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EventDetailScreen(event: filteredEvents[index]),
+                                ),
+                              ),
+                              child: _eventCard(filteredEvents[index]),
                             ),
                           );
                         },
@@ -369,7 +397,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   // EVENT CARD
-  Widget _eventCard(Map<String, dynamic> event) {
+  Widget _eventCard(EventModel event) {
     return Container(
       height: 125,
       decoration: BoxDecoration(
@@ -391,11 +419,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
               topLeft: Radius.circular(18),
               bottomLeft: Radius.circular(18),
             ),
-            child: Image.asset(
-              event['image'],
+            child: EventImage(
+              url: event.bannerUrl,
               width: 125,
               height: 125,
-              fit: BoxFit.cover,
             ),
           ),
 
@@ -417,7 +444,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Text(
-                      event['category'],
+                      event.kategori,
                       style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
@@ -430,7 +457,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   // TITLE
                   Text(
-                    event['title'],
+                    event.judul,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -453,7 +480,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          event['date'],
+                          event.tanggalLabel,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 10,
@@ -477,7 +504,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          event['location'],
+                          event.lokasi,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 10,
@@ -486,7 +513,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ),
                       ),
                       Text(
-                        event['price'],
+                        event.hargaLabel,
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
