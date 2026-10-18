@@ -44,6 +44,7 @@ dependencies:
   # Dipakai untuk menyimpan akun hasil register ke local storage HP,
   # supaya tidak hilang walau aplikasi ditutup total
   shared_preferences: ^2.3.2
+  mobile_scanner: ^7.4.2
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1
