@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
-import '../utils/app_colors.dart';
-import '../utils/app_nav.dart';
+import '../../models/user_model.dart';
+import '../../services/auth_service.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/app_nav.dart';
 import 'edit_profile_screen.dart';
-import 'login_screen.dart';
+import '../auth/login_screen.dart';
+import '../organizer/organizer_main_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -301,8 +302,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () => _soon(
-          isOrganizer ? 'Mode penyelenggara segera hadir' : 'Pengajuan jadi penyelenggara segera hadir',
+        // sementara semua akun bisa membuka mode penyelenggara untuk uji tampilan
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const OrganizerMainScreen()),
         ),
         child: Container(
           padding: const EdgeInsets.all(16),

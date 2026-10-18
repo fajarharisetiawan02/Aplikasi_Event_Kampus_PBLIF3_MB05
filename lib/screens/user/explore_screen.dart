@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/event_model.dart';
-import '../services/auth_service.dart' show AuthException;
-import '../services/event_service.dart';
-import '../widgets/event_image.dart';
+import '../../models/event_model.dart';
+import '../../services/auth_service.dart' show AuthException;
+import '../../services/event_service.dart';
+import '../../widgets/event_image.dart';
 import 'event_detail_screen.dart';
 
 class ExploreScreen extends StatefulWidget {

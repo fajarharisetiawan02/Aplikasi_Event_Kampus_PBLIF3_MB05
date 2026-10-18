@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
+
+import '../../utils/app_colors.dart';
 import 'ticket_screen.dart';
 import 'explore_screen.dart';
 import 'profile_screen.dart';
 import 'event_detail_screen.dart';
-import '../models/event_model.dart';
-import '../services/auth_service.dart' show AuthException;
-import '../services/event_service.dart';
-import '../utils/app_nav.dart';
-import '../widgets/event_image.dart';
+import '../../models/event_model.dart';
+import '../../services/auth_service.dart' show AuthException;
+import '../../services/event_service.dart';
+import '../../utils/app_nav.dart';
+import '../../widgets/event_image.dart';
 
 class HomeScreen extends StatefulWidget {
   final String? userName;
@@ -23,22 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Map<String, dynamic>> categories = [
-    {
-      'name': 'Musik',
-      'icon': Icons.music_note,
-    },
-    {
-      'name': 'Olahraga',
-      'icon': Icons.sports_soccer,
-    },
-    {
-      'name': 'Seminar',
-      'icon': Icons.school,
-    },
-    {
-      'name': 'Seni',
-      'icon': Icons.palette,
-    },
+    {'name': 'Musik', 'icon': Icons.music_note},
+    {'name': 'Olahraga', 'icon': Icons.sports_soccer},
+    {'name': 'Seminar', 'icon': Icons.school},
+    {'name': 'Seni', 'icon': Icons.palette},
   ];
 
   List<EventModel> _events = [];
@@ -84,44 +73,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openDetail(EventModel event) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EventDetailScreen(event: event)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     // Daftar halaman sesuai urutan bottom navigation.
-    // Home & Tiket sudah dibuat sungguhan, sisanya masih placeholder.
     final List<Widget> pages = [
-      _buildHomeContent(),         // index 0: Home
-      const ExploreScreen(),       // index 1: Explore
-      const TicketScreen(),        // index 2: Tiket
+      _buildHomeContent(), // index 0: Home
+      const ExploreScreen(), // index 1: Explore
+      const TicketScreen(), // index 2: Tiket
       const ProfileScreen(), // index 3: Profil
     ];
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: pages[_selectedIndex],
-      ),
+      body: SafeArea(child: pages[_selectedIndex]),
       bottomNavigationBar: _buildBottomNavigation(),
-    );
-  }
-
-  // Halaman sementara untuk tab yang belum dibuat.
-  Widget _placeholderPage(String label, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 56, color: Colors.grey.shade300),
-          const SizedBox(height: 12),
-          Text(
-            'Halaman $label\nsegera hadir',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
     );
   }
 
@@ -139,7 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.cloud_off_rounded, size: 56, color: Colors.grey.shade300),
+            Icon(
+              Icons.cloud_off_rounded,
+              size: 56,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 12),
             Text(_error!, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 12),
@@ -161,187 +136,181 @@ class _HomeScreenState extends State<HomeScreen> {
     return RefreshIndicator(
       onRefresh: _loadEvents,
       child: CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        // HEADER
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: 46,
-                    height: 46,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'EventIn',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Temukan event seru di sekitarmu',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(
-                      color: const Color(0xFFE5E7EB),
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          // HEADER
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 46,
+                      height: 46,
+                      fit: BoxFit.cover,
                     ),
                   ),
-                  child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'EventIn',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Temukan event seru di sekitarmu',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.notifications_none_rounded,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // GREETING
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Halo, ${widget.userName ?? 'User'} 👋',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                       color: AppColors.textDark,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 5),
+                  const Text(
+                    'Mau ikut event apa hari ini?',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
 
-        // GREETING
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Halo, ${widget.userName ?? 'User'} 👋',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Mau ikut event apa hari ini?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // KATEGORI
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _sectionTitle(
-                  title: 'Kategori',
-                  action: 'Lihat semua',
-                  onTap: () {
-                    setState(() {
-                      _selectedIndex = 1;
-                    });
-                  },
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  height: 95,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categories.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      return _categoryItem(categories[index]);
+          // KATEGORI
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionTitle(
+                    title: 'Kategori',
+                    action: 'Lihat semua',
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 1;
+                      });
                     },
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 95,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categories.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        return _categoryItem(categories[index]);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
 
-        // EVENT PILIHAN
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
-            child: _sectionTitle(
-              title: 'Event Pilihan',
-              action: 'Lihat semua',
-              onTap: () {
-                setState(() {
-                  _selectedIndex = 1;
-                });
-              },
-            ),
-          ),
-        ),
-
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 14),
-            child: SizedBox(
-              height: 270,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                scrollDirection: Axis.horizontal,
-                itemCount: _events.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () => _openDetail(_events[index]),
-                    child: _eventCard(_events[index]),
-                  );
+          // EVENT PILIHAN
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+              child: _sectionTitle(
+                title: 'Event Pilihan',
+                action: 'Lihat semua',
+                onTap: () {
+                  setState(() {
+                    _selectedIndex = 1;
+                  });
                 },
               ),
             ),
           ),
-        ),
 
-        // EVENT TERBARU
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
-            child: _sectionTitle(
-              title: 'Event Terbaru',
-              action: 'Lihat semua',
-              onTap: () {
-                setState(() {
-                  _selectedIndex = 1;
-                });
-              },
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: SizedBox(
+                height: 270,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _events.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () => _openDetail(_events[index]),
+                      child: _eventCard(_events[index]),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
-        ),
 
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
+          // EVENT TERBARU
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+              child: _sectionTitle(
+                title: 'Event Terbaru',
+                action: 'Lihat semua',
+                onTap: () {
+                  setState(() {
+                    _selectedIndex = 1;
+                  });
+                },
+              ),
+            ),
+          ),
+
+          SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
               return Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
                 child: GestureDetector(
@@ -349,15 +318,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _smallEventCard(_events[index]),
                 ),
               );
-            },
-            childCount: _events.length,
+            }, childCount: _events.length),
           ),
-        ),
 
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 20),
-        ),
-      ],
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        ],
       ),
     );
   }
@@ -407,9 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -613,11 +576,7 @@ class _HomeScreenState extends State<HomeScreen> {
               topLeft: Radius.circular(16),
               bottomLeft: Radius.circular(16),
             ),
-            child: EventImage(
-              url: event.bannerUrl,
-              width: 105,
-              height: 105,
-            ),
+            child: EventImage(url: event.bannerUrl, width: 105, height: 105),
           ),
           Expanded(
             child: Padding(
@@ -661,10 +620,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Padding(
             padding: EdgeInsets.only(right: 12),
-            child: Icon(
-              Icons.chevron_right_rounded,
-              color: Color(0xFF94A3B8),
-            ),
+            child: Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
           ),
         ],
       ),
@@ -679,18 +635,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE5E7EB),
-          ),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 8,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -757,8 +706,7 @@ class _HomeScreenState extends State<HomeScreen> {
               label,
               style: TextStyle(
                 fontSize: 10,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected
                     ? AppColors.primaryBlue
                     : const Color(0xFF94A3B8),

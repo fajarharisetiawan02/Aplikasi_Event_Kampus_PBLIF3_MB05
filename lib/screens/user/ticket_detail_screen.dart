@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../models/ticket_model.dart';
-import '../services/auth_service.dart';
-import '../services/ticket_service.dart';
-import '../utils/app_colors.dart';
-import '../widgets/event_image.dart';
+import '../../models/ticket_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/ticket_service.dart';
+import '../../utils/app_colors.dart';
+import '../../widgets/event_image.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   final TicketModel ticket;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/ticket_model.dart';
-import '../services/ticket_service.dart';
-import '../utils/app_colors.dart';
+import '../../models/ticket_model.dart';
+import '../../services/ticket_service.dart';
+import '../../utils/app_colors.dart';
 import 'ticket_detail_screen.dart';
-import '../widgets/event_image.dart';
+import '../../widgets/event_image.dart';
 
 class TicketScreen extends StatefulWidget {
   const TicketScreen({super.key});

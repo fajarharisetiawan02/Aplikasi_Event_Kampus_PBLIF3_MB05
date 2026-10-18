@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../models/event_model.dart';
-import '../models/ticket_model.dart';
-import '../services/auth_service.dart';
-import '../services/event_service.dart';
-import '../services/ticket_service.dart';
-import '../utils/app_colors.dart';
-import '../utils/app_nav.dart';
-import '../widgets/event_image.dart';
+import '../../models/event_model.dart';
+import '../../models/ticket_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/event_service.dart';
+import '../../services/ticket_service.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/app_nav.dart';
+import '../../widgets/event_image.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final EventModel event;
