@@ -1,17 +1,14 @@
-
 import 'package:flutter/material.dart';
 
 class AdminPenggunaScreen extends StatefulWidget {
   const AdminPenggunaScreen({super.key});
 
   @override
-  State<AdminPenggunaScreen> createState() =>
-      _AdminPenggunaScreenState();
+  State<AdminPenggunaScreen> createState() => _AdminPenggunaScreenState();
 }
 
 class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   String _selectedRole = 'Semua';
 
@@ -76,8 +73,8 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
     final keyword = _searchController.text.toLowerCase();
 
     return _users.where((user) {
-      final cocokRole = _selectedRole == 'Semua' ||
-          user['role'] == _selectedRole;
+      final cocokRole =
+          _selectedRole == 'Semua' || user['role'] == _selectedRole;
 
       final cocokCari =
           user['nama'].toString().toLowerCase().contains(keyword) ||
@@ -88,8 +85,7 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
     }).toList();
   }
 
-  int get _jumlahAktif =>
-      _users.where((user) => user['aktif'] == true).length;
+  int get _jumlahAktif => _users.where((user) => user['aktif'] == true).length;
 
   int get _jumlahMahasiswa =>
       _users.where((user) => user['role'] == 'Mahasiswa').length;
@@ -111,10 +107,7 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
         elevation: 0,
         title: const Text(
           'Manajemen Pengguna',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ),
       body: SafeArea(
@@ -129,10 +122,7 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF1D4ED8),
-                      Color(0xFF3B82F6),
-                    ],
+                    colors: [Color(0xFF1D4ED8), Color(0xFF3B82F6)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -208,17 +198,17 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
               // STATISTIK
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final jumlahKolom =
-                      constraints.maxWidth >= 650 ? 4 : 2;
+                  final jumlahKolom = constraints.maxWidth >= 650 ? 4 : 2;
 
-                  return GridView.count(
-                    crossAxisCount: jumlahKolom,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio:
-                        jumlahKolom == 4 ? 1.45 : 1.5,
+                 
+return GridView.count(
+  crossAxisCount: jumlahKolom,
+  shrinkWrap: true,
+  physics: const NeverScrollableScrollPhysics(),
+  crossAxisSpacing: 12,
+  mainAxisSpacing: 12,
+  childAspectRatio: jumlahKolom == 4 ? 1.25 : 1.25,
+
                     children: [
                       _statCard(
                         'Total Akun',
@@ -294,9 +284,7 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
                       : null,
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 15,
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -310,41 +298,38 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: [
-                    'Semua',
-                    'Mahasiswa',
-                    'Penyelenggara',
-                    'Admin',
-                  ].map((role) {
-                    final selected = _selectedRole == role;
+                  children: ['Semua', 'Mahasiswa', 'Penyelenggara', 'Admin']
+                      .map((role) {
+                        final selected = _selectedRole == role;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(role),
-                        selected: selected,
-                        showCheckmark: false,
-                        onSelected: (_) {
-                          setState(() {
-                            _selectedRole = role;
-                          });
-                        },
-                        selectedColor: const Color(0xFFDBEAFE),
-                        backgroundColor: Colors.white,
-                        labelStyle: TextStyle(
-                          color: selected
-                              ? const Color(0xFF1D4ED8)
-                              : const Color(0xFF475569),
-                          fontWeight: FontWeight.w600,
-                        ),
-                        side: BorderSide(
-                          color: selected
-                              ? const Color(0xFF93C5FD)
-                              : const Color(0xFFE2E8F0),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(role),
+                            selected: selected,
+                            showCheckmark: false,
+                            onSelected: (_) {
+                              setState(() {
+                                _selectedRole = role;
+                              });
+                            },
+                            selectedColor: const Color(0xFFDBEAFE),
+                            backgroundColor: Colors.white,
+                            labelStyle: TextStyle(
+                              color: selected
+                                  ? const Color(0xFF1D4ED8)
+                                  : const Color(0xFF475569),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            side: BorderSide(
+                              color: selected
+                                  ? const Color(0xFF93C5FD)
+                                  : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                        );
+                      })
+                      .toList(),
                 ),
               ),
 
@@ -392,12 +377,7 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
     );
   }
 
-  Widget _statCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _statCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -430,10 +410,7 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF64748B),
-            ),
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
           ),
         ],
       ),
@@ -525,18 +502,15 @@ class _AdminPenggunaScreenState extends State<AdminPenggunaScreen> {
                     value: 'status',
                     child: Row(
                       children: [
-                    
-Icon(
-  aktif
-      ? Icons.person_off_outlined
-      : Icons.how_to_reg_outlined,
-  size: 20,
-),
+                        Icon(
+                          aktif
+                              ? Icons.person_off_outlined
+                              : Icons.how_to_reg_outlined,
+                          size: 20,
+                        ),
 
                         const SizedBox(width: 10),
-                        Text(
-                          aktif ? 'Nonaktifkan' : 'Aktifkan',
-                        ),
+                        Text(aktif ? 'Nonaktifkan' : 'Aktifkan'),
                       ],
                     ),
                   ),
@@ -571,13 +545,13 @@ Icon(
                 role == 'Admin'
                     ? const Color(0xFFFFEDD5)
                     : role == 'Penyelenggara'
-                        ? const Color(0xFFF3E8FF)
-                        : const Color(0xFFDBEAFE),
+                    ? const Color(0xFFF3E8FF)
+                    : const Color(0xFFDBEAFE),
                 role == 'Admin'
                     ? const Color(0xFF9A3412)
                     : role == 'Penyelenggara'
-                        ? const Color(0xFF7E22CE)
-                        : const Color(0xFF1D4ED8),
+                    ? const Color(0xFF7E22CE)
+                    : const Color(0xFF1D4ED8),
               ),
             ],
           ),
@@ -587,9 +561,7 @@ Icon(
           Row(
             children: [
               Icon(
-                aktif
-                    ? Icons.check_circle_outline
-                    : Icons.cancel_outlined,
+                aktif ? Icons.check_circle_outline : Icons.cancel_outlined,
                 size: 17,
                 color: aktif
                     ? const Color(0xFF059669)
@@ -620,21 +592,14 @@ Icon(
 
   Widget _badge(String label, Color bg, Color fg) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: fg,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -643,9 +608,7 @@ Icon(
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Detail Pengguna'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -653,19 +616,13 @@ Icon(
           children: [
             Text(
               user['nama'] as String,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _detailRow('Email', user['email'] as String),
             _detailRow('NIM', user['nim'] as String),
             _detailRow('Role', user['role'] as String),
-            _detailRow(
-              'Status',
-              user['aktif'] ? 'Aktif' : 'Nonaktif',
-            ),
+            _detailRow('Status', user['aktif'] ? 'Aktif' : 'Nonaktif'),
           ],
         ),
         actions: [
@@ -686,10 +643,7 @@ Icon(
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-            ),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 3),
           SelectableText(
