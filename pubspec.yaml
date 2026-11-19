@@ -46,6 +46,9 @@ dependencies:
   shared_preferences: ^2.3.2
   mobile_scanner: ^7.4.2
 
+  # Dipakai untuk memilih gambar banner event dari galeri
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1
   flutter_test:

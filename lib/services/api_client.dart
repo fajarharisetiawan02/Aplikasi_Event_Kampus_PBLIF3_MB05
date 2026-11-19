@@ -15,6 +15,45 @@ class ApiClient {
     return _send((headers) => http.post(_uri(path), headers: headers, body: jsonEncode(body ?? {})));
   }
 
+  static Future<Map<String, dynamic>> put(String path, {Map<String, dynamic>? body}) {
+    return _send((headers) => http.put(_uri(path), headers: headers, body: jsonEncode(body ?? {})));
+  }
+
+  static Future<Map<String, dynamic>> delete(String path) {
+    return _send((headers) => http.delete(_uri(path), headers: headers));
+  }
+
+  // Unggah satu file (multipart). Dipakai untuk banner event.
+  static Future<Map<String, dynamic>> upload(
+    String path,
+    String field,
+    List<int> bytes,
+    String filename,
+  ) async {
+    final token = AuthService.token;
+    final request = http.MultipartRequest('POST', _uri(path))
+      ..headers['Accept'] = 'application/json'
+      ..files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+
+    try {
+      final streamed = await request.send().timeout(const Duration(seconds: 60));
+      final res = await http.Response.fromStream(streamed);
+      final body = res.body.isNotEmpty
+          ? jsonDecode(res.body) as Map<String, dynamic>
+          : <String, dynamic>{};
+
+      if (res.statusCode >= 200 && res.statusCode < 300) return body;
+      throw AuthException(_errorMessage(body, res.statusCode));
+    } on AuthException {
+      rethrow;
+    } on TimeoutException {
+      throw AuthException('Unggah terlalu lama. Coba lagi.');
+    } catch (_) {
+      throw AuthException('Tidak dapat terhubung ke server.');
+    }
+  }
+
   static Uri _uri(String path, [Map<String, String>? query]) {
     final uri = Uri.parse('${AuthService.baseUrl}$path');
     if (query == null || query.isEmpty) return uri;

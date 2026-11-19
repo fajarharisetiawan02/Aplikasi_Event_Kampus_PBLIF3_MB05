@@ -16,6 +16,25 @@ class OrganizerEventScreen extends StatefulWidget {
 class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
   final _cari = TextEditingController();
   StatusEvent? _filter; // null = semua
+  bool _memuat = true;
+  String? _galat;
+
+  @override
+  void initState() {
+    super.initState();
+    _muat();
+  }
+
+  Future<void> _muat() async {
+    try {
+      await muatEventSaya();
+      if (mounted) setState(() => _galat = null);
+    } catch (e) {
+      if (mounted) setState(() => _galat = '$e');
+    } finally {
+      if (mounted) setState(() => _memuat = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -34,7 +53,10 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
       context,
       MaterialPageRoute(builder: (_) => OrganizerEventFormScreen(event: event)),
     );
-    if (hasil != null && mounted) _pesan(hasil);
+    if (hasil != null && mounted) {
+      _pesan(hasil);
+      _muat();
+    }
   }
 
   Future<void> _hapus(OrganizerEvent e) async {
@@ -53,8 +75,12 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
       ),
     );
     if (ya == true) {
-      hapusEvent(e.id);
-      _pesan('Event dihapus');
+      try {
+        await hapusEvent(e.id);
+        _pesan('Event dihapus');
+      } catch (err) {
+        _pesan('$err');
+      }
     }
   }
 
@@ -85,16 +111,20 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
               ),
               const SizedBox(height: 6),
-              if (e.status != StatusEvent.selesai)
-                _menuItem(Icons.edit_outlined, 'Edit event', AppColors.textDark, () {
+              if (e.status != StatusEvent.selesai && e.status != StatusEvent.dibatalkan)
+                _menuItem(Icons.edit_outlined, e.status == StatusEvent.ditolak ? 'Perbaiki dan ajukan ulang' : 'Edit event', AppColors.textDark, () {
                   Navigator.pop(ctx);
                   _buka(e);
                 }),
               if (e.status == StatusEvent.draft)
-                _menuItem(Icons.publish_rounded, 'Terbitkan', AppColors.primaryBlue, () {
+                _menuItem(Icons.send_rounded, 'Ajukan ke admin', AppColors.primaryBlue, () async {
                   Navigator.pop(ctx);
-                  simpanEvent(e.copyWith(status: StatusEvent.terbit));
-                  _pesan('Event diterbitkan');
+                  try {
+                    await simpanEvent(e.copyWith(status: StatusEvent.menunggu));
+                    _pesan('Event diajukan, menunggu persetujuan admin');
+                  } catch (err) {
+                    _pesan('$err');
+                  }
                 }),
               _menuItem(Icons.delete_outline_rounded, 'Hapus event', const Color(0xFFDC2626), () {
                 Navigator.pop(ctx);
@@ -128,7 +158,11 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Buat event', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
-      body: ValueListenableBuilder<List<OrganizerEvent>>(
+      body: _memuat
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _muat,
+              child: ValueListenableBuilder<List<OrganizerEvent>>(
         valueListenable: organizerEvents,
         builder: (context, semua, _) {
           final kata = _cari.text.trim().toLowerCase();
@@ -138,6 +172,7 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
           }).toList();
 
           return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
             children: [
               const Text(
@@ -154,6 +189,11 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
               const SizedBox(height: 12),
               _filterChips(semua),
               const SizedBox(height: 14),
+              if (_galat != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(_galat!, style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626))),
+                ),
               if (tampil.isEmpty)
                 _kosong(semua.isEmpty)
               else
@@ -166,6 +206,7 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
           );
         },
       ),
+            ),
     );
   }
 
@@ -238,6 +279,8 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
         children: [
           chip('Semua', null),
           chip('Terbit', StatusEvent.terbit),
+          chip('Menunggu', StatusEvent.menunggu),
+          chip('Ditolak', StatusEvent.ditolak),
           chip('Draft', StatusEvent.draft),
           chip('Selesai', StatusEvent.selesai),
         ],
@@ -273,6 +316,15 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
       case StatusEvent.terbit:
         teks = 'Terbit';
         warna = const Color(0xFF16A34A);
+      case StatusEvent.menunggu:
+        teks = 'Menunggu admin';
+        warna = const Color(0xFFB45309);
+      case StatusEvent.ditolak:
+        teks = 'Ditolak';
+        warna = const Color(0xFFDC2626);
+      case StatusEvent.dibatalkan:
+        teks = 'Dibatalkan';
+        warna = const Color(0xFF64748B);
       case StatusEvent.draft:
         teks = 'Draft';
         warna = AppColors.accentOrange;
@@ -369,6 +421,21 @@ class _OrganizerEventScreenState extends State<OrganizerEventScreen> {
                   ),
                 ],
               ),
+              if (e.status == StatusEvent.ditolak && (e.alasanPenolakan ?? '').isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Alasan penolakan: ${e.alasanPenolakan}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFFB91C1C)),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),

@@ -54,6 +54,10 @@ class EventController extends Controller
             $query->where('organizer_id', $user->id);
         }
 
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
         return response()->json([
             'data' => $query->get()->map->toApiArray()->values(),
         ]);
@@ -68,7 +72,10 @@ class EventController extends Controller
             return $this->forbidden();
         }
 
-        $event = new Event($this->validated($request));
+        $data = $this->validated($request);
+        $data['status'] = $this->statusBaru($user, null, $data['status'] ?? null);
+
+        $event = new Event($data);
         $event->organizer_id = $user->id;
         $event->save();
 
@@ -85,7 +92,15 @@ class EventController extends Controller
             return $this->forbidden();
         }
 
-        $event->update($this->validated($request));
+        $data = $this->validated($request);
+        $data['status'] = $this->statusBaru($request->user(), $event, $data['status'] ?? null);
+
+        // Diajukan ulang setelah ditolak: alasan lama dihapus.
+        if ($data['status'] !== 'rejected') {
+            $data['alasan_penolakan'] = null;
+        }
+
+        $event->forceFill($data)->save();
 
         return response()->json([
             'message' => 'Event berhasil diperbarui.',
@@ -105,6 +120,92 @@ class EventController extends Controller
         return response()->json(['message' => 'Event berhasil dihapus.']);
     }
 
+    // Unggah gambar banner. Hasilnya berupa URL yang dikirim lagi lewat field banner_url saat simpan event.
+    public function uploadBanner(Request $request): JsonResponse
+    {
+        if (! $this->canManage($request->user())) {
+            return $this->forbidden();
+        }
+
+        $request->validate([
+            'banner' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'banner.image' => 'File harus berupa gambar.',
+            'banner.mimes' => 'Format gambar harus JPG, PNG, atau WEBP.',
+            'banner.max' => 'Ukuran gambar maksimal 2 MB.',
+        ]);
+
+        $path = $request->file('banner')->store('banners', 'public');
+
+        return response()->json([
+            'message' => 'Banner berhasil diunggah.',
+            'data' => ['banner_url' => url('storage/' . $path)],
+        ], 201);
+    }
+
+    // ADMIN: setujui event yang menunggu (atau yang sebelumnya ditolak)
+    public function approve(Request $request, Event $event): JsonResponse
+    {
+        if (! $request->user()->is_admin) {
+            return $this->forbidden();
+        }
+
+        if (! in_array($event->status, ['pending', 'rejected'], true)) {
+            return response()->json(['message' => 'Hanya event yang menunggu persetujuan yang bisa disetujui.'], 422);
+        }
+
+        $event->forceFill(['status' => 'published', 'alasan_penolakan' => null])->save();
+
+        return response()->json([
+            'message' => 'Event disetujui dan sudah tampil ke mahasiswa.',
+            'data' => $event->load('organizer')->toApiArray(),
+        ]);
+    }
+
+    // ADMIN: tolak event yang menunggu, alasan wajib diisi
+    public function reject(Request $request, Event $event): JsonResponse
+    {
+        if (! $request->user()->is_admin) {
+            return $this->forbidden();
+        }
+
+        $data = $request->validate([
+            'alasan' => ['required', 'string', 'min:3', 'max:500'],
+        ]);
+
+        if ($event->status !== 'pending') {
+            return response()->json(['message' => 'Hanya event yang menunggu persetujuan yang bisa ditolak.'], 422);
+        }
+
+        $event->forceFill(['status' => 'rejected', 'alasan_penolakan' => $data['alasan']])->save();
+
+        return response()->json([
+            'message' => 'Event ditolak.',
+            'data' => $event->load('organizer')->toApiArray(),
+        ]);
+    }
+
+    // Penyelenggara tidak boleh menerbitkan sendiri: event baru selalu menunggu admin.
+    // Event yang sudah tayang tetap tayang saat diedit. Admin bebas menentukan status.
+    private function statusBaru(User $user, ?Event $event, ?string $diminta): string
+    {
+        if ($user->is_admin) {
+            return $diminta ?? $event?->status ?? 'published';
+        }
+
+        if ($event && $diminta === 'cancelled') {
+            return 'cancelled';
+        }
+
+        if ($event?->status === 'published') {
+            return 'published';
+        }
+
+        $diminta ??= $event?->status === 'draft' ? 'draft' : 'pending';
+
+        return $diminta === 'draft' ? 'draft' : 'pending';
+    }
+
     private function validated(Request $request): array
     {
         return $request->validate([
@@ -115,9 +216,10 @@ class EventController extends Controller
             'tanggal' => ['required', 'date'],
             'waktu' => ['nullable', 'string', 'max:50'],
             'lokasi' => ['required', 'string', 'max:150'],
+            'alamat' => ['nullable', 'string', 'max:255'],
             'harga' => ['required', 'integer', 'min:0'],
             'kuota' => ['required', 'integer', 'min:1'],
-            'status' => ['sometimes', 'in:draft,published,cancelled'],
+            'status' => ['sometimes', 'in:draft,pending,published,rejected,cancelled'],
         ]);
     }
 
