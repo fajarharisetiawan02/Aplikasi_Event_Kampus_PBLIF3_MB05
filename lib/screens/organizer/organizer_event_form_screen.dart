@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/event_model.dart';
+import '../../services/event_service.dart';
+import '../../widgets/event_image.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/organizer_event_store.dart';
 
@@ -32,6 +35,9 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
   bool _berbayar = false;
   bool _salahTanggal = false;
   bool _salahWaktu = false;
+  bool _menyimpan = false;
+  bool _mengunggah = false;
+  String? _banner;
 
   bool get _edit => widget.event != null;
 
@@ -50,6 +56,7 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
       _berbayar = !e.gratis;
       _harga.text = e.gratis ? '' : e.harga.toString();
       _kuota.text = e.kuota.toString();
+      _banner = e.banner;
     }
   }
 
@@ -120,40 +127,79 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
     }
   }
 
-  // Draft boleh disimpan walau belum lengkap, asal nama event sudah diisi.
-  void _simpan(StatusEvent status) {
-    final nama = _nama.text.trim();
-    if (nama.isEmpty) {
-      setState(() => _langkah = 0);
+  // Data harus lengkap sebelum disimpan, karena langsung masuk database.
+  // Kalau ada yang kurang, kembali ke langkah yang bersangkutan.
+  bool _lengkap() {
+    final infoLengkap = _nama.text.trim().length >= 3 &&
+        _kategori != null &&
+        _deskripsi.text.trim().isNotEmpty &&
+        _lokasi.text.trim().isNotEmpty &&
+        _tanggal != null &&
+        _waktu != null;
+
+    if (!infoLengkap) {
+      setState(() {
+        _langkah = 0;
+        _salahTanggal = _tanggal == null;
+        _salahWaktu = _waktu == null;
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) => _formInfo.currentState?.validate());
-      return;
+      return false;
     }
+
+    final kuota = int.tryParse(_kuota.text.trim()) ?? 0;
+    final harga = int.tryParse(_harga.text.trim()) ?? 0;
+    if (kuota < 1 || (_berbayar && harga < 1)) {
+      setState(() => _langkah = 1);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _formTiket.currentState?.validate());
+      return false;
+    }
+    return true;
+  }
+
+  // status draft = simpan saja, menunggu = diajukan ke admin untuk disetujui.
+  Future<void> _simpan(StatusEvent status) async {
+    if (_menyimpan || !_lengkap()) return;
 
     final lama = widget.event;
     final harga = _berbayar ? (int.tryParse(_harga.text.trim()) ?? 0) : 0;
     final kuota = int.tryParse(_kuota.text.trim()) ?? 0;
 
     final baru = OrganizerEvent(
-      id: lama?.id ?? idBaru(),
-      judul: nama,
-      kategori: _kategori ?? 'Lainnya',
+      id: lama?.id ?? '',
+      judul: _nama.text.trim(),
+      kategori: _kategori!,
       deskripsi: _deskripsi.text.trim(),
-      tanggal: _tanggal ?? DateTime.now(),
-      waktu: _waktu ?? const TimeOfDay(hour: 9, minute: 0),
+      tanggal: _tanggal!,
+      waktu: _waktu!,
       lokasi: _lokasi.text.trim(),
       alamat: _alamat.text.trim(),
-      banner: lama?.banner,
+      banner: _banner,
       harga: harga,
       kuota: kuota,
       terjual: lama?.terjual ?? 0,
       status: status,
     );
 
-    simpanEvent(baru);
-    Navigator.pop(
-      context,
-      status == StatusEvent.terbit ? 'Event diterbitkan' : 'Draft disimpan',
-    );
+    setState(() => _menyimpan = true);
+    try {
+      final hasil = await simpanEvent(baru);
+      if (!mounted) return;
+      Navigator.pop(
+        context,
+        hasil.status == StatusEvent.draft
+            ? 'Draft disimpan'
+            : hasil.status == StatusEvent.terbit
+                ? 'Perubahan disimpan'
+                : 'Event diajukan, menunggu persetujuan admin',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _menyimpan = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e'), behavior: SnackBarBehavior.floating),
+      );
+    }
   }
 
   // =========================
@@ -262,7 +308,7 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () => _simpan(StatusEvent.draft),
+                onPressed: _menyimpan ? null : () => _simpan(StatusEvent.draft),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryBlue,
                   side: BorderSide(color: AppColors.primaryBlue.withValues(alpha: 0.4)),
@@ -275,7 +321,7 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
-                onPressed: terakhir ? () => _simpan(StatusEvent.terbit) : _lanjut,
+                onPressed: _menyimpan ? null : (terakhir ? () => _simpan(StatusEvent.menunggu) : _lanjut),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   foregroundColor: Colors.white,
@@ -284,7 +330,7 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(
-                  terakhir ? 'Terbitkan' : 'Lanjut',
+                  terakhir ? (_menyimpan ? 'Menyimpan...' : 'Ajukan ke Admin') : 'Lanjut',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -390,37 +436,96 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
     );
   }
 
+  Future<void> _pilihBanner() async {
+    if (_mengunggah) return;
+    try {
+      final file = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+
+      setState(() => _mengunggah = true);
+      final url = await EventService.uploadBanner(await file.readAsBytes(), file.name);
+      if (mounted) setState(() => _banner = url);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e'), behavior: SnackBarBehavior.floating),
+      );
+    } finally {
+      if (mounted) setState(() => _mengunggah = false);
+    }
+  }
+
   Widget _bannerBox() {
+    final ada = _banner != null && _banner!.isNotEmpty;
+
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unggah banner segera hadir'), behavior: SnackBarBehavior.floating),
-      ),
+      onTap: _pilihBanner,
       child: Container(
-        height: 96,
+        height: ada ? 180 : 96,
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.35)),
         ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add_photo_alternate_outlined, size: 28, color: AppColors.primaryBlue),
-            SizedBox(width: 10),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Unggah banner event',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
-                ),
-                SizedBox(height: 2),
-                Text('Disarankan rasio 16:9', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-              ],
-            ),
-          ],
+        child: _mengunggah
+            ? const Center(child: CircularProgressIndicator())
+            : ada
+                ? Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      EventImage(url: _banner),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Row(
+                          children: [
+                            _tombolBanner(Icons.edit_outlined, _pilihBanner),
+                            const SizedBox(width: 6),
+                            _tombolBanner(Icons.delete_outline, () => setState(() => _banner = null)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_photo_alternate_outlined, size: 28, color: AppColors.primaryBlue),
+                      SizedBox(width: 10),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Unggah banner event',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                          ),
+                          SizedBox(height: 2),
+                          Text('Disarankan rasio 16:9, maks. 2 MB', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        ],
+                      ),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  Widget _tombolBanner(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 18, color: AppColors.primaryBlue),
         ),
       ),
     );

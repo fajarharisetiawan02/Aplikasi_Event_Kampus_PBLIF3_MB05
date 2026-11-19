@@ -19,9 +19,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/my-events', [EventController::class, 'mine']);
+    Route::post('/events/banner', [EventController::class, 'uploadBanner']);
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{event}', [EventController::class, 'update'])->whereNumber('event');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->whereNumber('event');
+    Route::put('/events/{event}/approve', [EventController::class, 'approve'])->whereNumber('event');
+    Route::put('/events/{event}/reject', [EventController::class, 'reject'])->whereNumber('event');
 
     Route::post('/events/{event}/register', [RegistrationController::class, 'store'])->whereNumber('event');
     Route::get('/my-tickets', [RegistrationController::class, 'mine']);
