@@ -12,7 +12,12 @@ class AdminPengajuanScreen extends StatefulWidget {
 
 class _AdminPengajuanScreenState extends State<AdminPengajuanScreen> {
   final _cari = TextEditingController();
-  int _tab = 0; // 0 menunggu, 1 disetujui, 2 ditolak, 3 semua
+  String _cariAktif = ''; // kata pencarian yang sudah diterapkan (tombol Filter atau Enter)
+  int _tab = 1; // 0 semua, 1 menunggu, 2 disetujui, 3 ditolak (awalnya Menunggu)
+  int _hal = 0;
+  int _perHal = 10;
+  int? _urut; // nomor kolom yang dipakai untuk mengurutkan
+  bool _naik = true;
 
   @override
   void dispose() {
@@ -23,12 +28,12 @@ class _AdminPengajuanScreenState extends State<AdminPengajuanScreen> {
   int _hitung(List<Pengajuan> d, StatusPengajuan s) => d.where((p) => p.status == s).length;
 
   List<Pengajuan> _saring(List<Pengajuan> d) {
-    final q = _cari.text.trim().toLowerCase();
+    final q = _cariAktif;
     return d.where((p) {
       final cocokTab = switch (_tab) {
-        0 => p.status == StatusPengajuan.menunggu,
-        1 => p.status == StatusPengajuan.disetujui,
-        2 => p.status == StatusPengajuan.ditolak,
+        1 => p.status == StatusPengajuan.menunggu,
+        2 => p.status == StatusPengajuan.disetujui,
+        3 => p.status == StatusPengajuan.ditolak,
         _ => true,
       };
       final cocokCari = q.isEmpty ||
@@ -41,9 +46,46 @@ class _AdminPengajuanScreenState extends State<AdminPengajuanScreen> {
 
   void _ubah(Pengajuan p, StatusPengajuan s, String pesan) {
     ubahPengajuan(p.id, s);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(pesan), behavior: SnackBarBehavior.floating),
-    );
+    adminPesan(context, pesan);
+  }
+
+  void _klikUrut(int i) {
+    setState(() {
+      if (_urut == i) {
+        // naik -> turun -> kembali ke urutan awal
+        if (_naik) {
+          _naik = false;
+        } else {
+          _urut = null;
+          _naik = true;
+        }
+      } else {
+        _urut = i;
+        _naik = true;
+      }
+      _hal = 0;
+    });
+  }
+
+  List<Pengajuan> _urutkan(List<Pengajuan> d) {
+    if (_urut == null) return d;
+    int banding(Pengajuan a, Pengajuan b) {
+      switch (_urut) {
+        case 1:
+          return a.nama.toLowerCase().compareTo(b.nama.toLowerCase());
+        case 2:
+          return a.organisasi.toLowerCase().compareTo(b.organisasi.toLowerCase());
+        case 3:
+          return adminParseTanggal(a.tanggal).compareTo(adminParseTanggal(b.tanggal));
+        case 4:
+          return a.status.index.compareTo(b.status.index);
+        default:
+          return 0;
+      }
+    }
+
+    final hasil = [...d]..sort(banding);
+    return _naik ? hasil : hasil.reversed.toList();
   }
 
   Future<void> _konfirmasiTolak(Pengajuan p) async {
@@ -72,25 +114,25 @@ class _AdminPengajuanScreenState extends State<AdminPengajuanScreen> {
     };
   }
 
-  Widget _aksi(Pengajuan p) {
+  List<Widget> _aksi(Pengajuan p) {
     if (p.status == StatusPengajuan.menunggu) {
-      return Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: [
-          AdminTombol(
-            label: 'Setujui',
-            utama: true,
-            onTap: () => _ubah(p, StatusPengajuan.disetujui, '${p.nama} kini menjadi penyelenggara'),
-          ),
-          AdminTombol(label: 'Tolak', bahaya: true, onTap: () => _konfirmasiTolak(p)),
-        ],
-      );
+      return [
+        AdminTombolAksi(
+          label: 'Setujui',
+          jenis: AdminAksi.setujui,
+          onTap: () => _ubah(p, StatusPengajuan.disetujui, '${p.nama} kini menjadi penyelenggara'),
+        ),
+        AdminTombolAksi(label: 'Tolak', jenis: AdminAksi.tolak, onTap: () => _konfirmasiTolak(p)),
+      ];
     }
-    return AdminTombol(
-      label: 'Batalkan',
-      onTap: () => _ubah(p, StatusPengajuan.menunggu, 'Pengajuan ${p.nama} dikembalikan ke menunggu'),
-    );
+    return [
+      AdminTombolAksi(
+        label: 'Batalkan',
+        jenis: AdminAksi.netral,
+        ikon: Icons.undo_rounded,
+        onTap: () => _ubah(p, StatusPengajuan.menunggu, 'Pengajuan ${p.nama} dikembalikan ke menunggu'),
+      ),
+    ];
   }
 
   Widget _orang(Pengajuan p) {
@@ -120,65 +162,89 @@ class _AdminPengajuanScreenState extends State<AdminPengajuanScreen> {
     return ValueListenableBuilder<List<Pengajuan>>(
       valueListenable: daftarPengajuan,
       builder: (context, data, _) {
-        final tampil = _saring(data);
+        final semua = _urutkan(_saring(data));
+        final jumlahHal = adminJumlahHalaman(semua.length, _perHal);
+        final hal = _hal >= jumlahHal ? jumlahHal - 1 : _hal;
+        final tampil = semua.skip(hal * _perHal).take(_perHal).toList();
+        final menunggu = _hitung(data, StatusPengajuan.menunggu);
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           children: [
-            const AdminHeader(judul: 'Pengajuan penyelenggara', sub: 'Tinjau pengguna yang ingin membuat event'),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(child: AdminStatCard(ikon: Icons.hourglass_top_rounded, warna: AppColors.accentOrange, label: 'Menunggu', nilai: '${_hitung(data, StatusPengajuan.menunggu)}')),
-                const SizedBox(width: 10),
-                Expanded(child: AdminStatCard(ikon: Icons.check_circle_outline_rounded, warna: const Color(0xFF16A34A), label: 'Disetujui', nilai: '${_hitung(data, StatusPengajuan.disetujui)}')),
-                const SizedBox(width: 10),
-                Expanded(child: AdminStatCard(ikon: Icons.cancel_outlined, warna: const Color(0xFFDC2626), label: 'Ditolak', nilai: '${_hitung(data, StatusPengajuan.ditolak)}')),
-              ],
-            ),
-            const SizedBox(height: 18),
-            AdminChips(
-              label: [
-                'Menunggu (${_hitung(data, StatusPengajuan.menunggu)})',
-                'Disetujui',
-                'Ditolak',
-                'Semua',
-              ],
-              terpilih: _tab,
-              onPilih: (i) => setState(() => _tab = i),
-            ),
-            const SizedBox(height: 12),
-            AdminSearch(controller: _cari, hint: 'Cari nama, email, atau organisasi', onChanged: () => setState(() {})),
-            const SizedBox(height: 14),
-            AdminTable(
-              kosong: 'Tidak ada pengajuan.',
-              kolom: const [
-                AdminKolom('Pemohon', 4),
-                AdminKolom('Organisasi', 3),
-                AdminKolom('Tanggal', 2),
-                AdminKolom('Status', 2),
-                AdminKolom('Aksi', 3, kanan: true),
-              ],
-              baris: [
-                for (final p in tampil)
-                  [_orang(p), _teks(p.organisasi), _teks(p.tanggal), _status(p.status), _aksi(p)],
-              ],
-              kartu: [
-                for (final p in tampil)
-                  AdminKartu(children: [
-                    _orang(p),
-                    const SizedBox(height: 10),
-                    Text('${p.organisasi} · ${p.tanggal}', style: const TextStyle(fontSize: 12, color: adminAbu)),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _status(p.status),
-                        const Spacer(),
-                        _aksi(p),
+            AdminDuaKolom(
+              rail: (horizontal) => AdminDaftarStatus(
+                horizontal: horizontal,
+                item: [
+                  AdminStatusItem('Semua', data.length),
+                  AdminStatusItem('Menunggu', menunggu, sorot: true),
+                  AdminStatusItem('Disetujui', _hitung(data, StatusPengajuan.disetujui)),
+                  AdminStatusItem('Ditolak', _hitung(data, StatusPengajuan.ditolak)),
+                ],
+                terpilih: _tab,
+                onPilih: (i) => setState(() {
+                  _tab = i;
+                  _hal = 0;
+                }),
+              ),
+              isi: AdminTabelBaru(
+                atas: AdminBarisCari(
+                  controller: _cari,
+                  hint: 'Cari nama, email, atau organisasi',
+                  onChanged: () => setState(() {}),
+                  onCari: () => setState(() {
+                    _cariAktif = _cari.text.trim().toLowerCase();
+                    _hal = 0;
+                  }),
+                  onReset: () => setState(() {
+                    _cari.clear();
+                    _cariAktif = '';
+                    _tab = 0;
+                    _urut = null;
+                    _naik = true;
+                    _hal = 0;
+                  }),
+                  kanan: AdminPilihPerHal(
+                    nilai: _perHal,
+                    onUbah: (v) => setState(() {
+                      _perHal = v;
+                      _hal = 0;
+                    }),
+                  ),
+                ),
+                urutKolom: _urut,
+                urutNaik: _naik,
+                onUrut: _klikUrut,
+                kolom: const [
+                  AdminKol('No', 1, tengah: true),
+                  AdminKol('Pemohon', 5, urut: true),
+                  AdminKol('Organisasi', 3, urut: true),
+                  AdminKol('Tanggal', 2, urut: true),
+                  AdminKol('Status', 2, tengah: true, urut: true),
+                  AdminKol('Aksi', 4, tengah: true),
+                ],
+                baris: [
+                  for (var i = 0; i < tampil.length; i++)
+                    AdminBaris(
+                      sorot: tampil[i].status == StatusPengajuan.menunggu,
+                      sel: [
+                        Text('${hal * _perHal + i + 1}', style: const TextStyle(fontSize: 12.5, color: Color(0xFF667085))),
+                        _orang(tampil[i]),
+                        _teks(tampil[i].organisasi),
+                        _teks(tampil[i].tanggal),
+                        _status(tampil[i].status),
+                        Wrap(spacing: 6, runSpacing: 6, alignment: WrapAlignment.center, children: _aksi(tampil[i])),
                       ],
                     ),
-                  ]),
-              ],
+                ],
+                kosong: 'Tidak ada pengajuan.',
+                info: AdminInfoJumlah(
+                  mulai: semua.isEmpty ? 0 : hal * _perHal + 1,
+                  sampai: hal * _perHal + tampil.length,
+                  total: semua.length,
+                  label: 'pengajuan',
+                ),
+                paging: AdminPaging(halaman: hal, jumlah: jumlahHal, onPilih: (i) => setState(() => _hal = i)),
+              ),
             ),
           ],
         );
