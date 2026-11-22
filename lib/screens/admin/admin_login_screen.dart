@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
 import '../../utils/app_colors.dart';
 import 'admin_shell.dart';
 import 'admin_widgets.dart';
 
-// Login admin (data contoh, belum terhubung ke backend).
+// Login admin lewat API. Peran admin diperiksa dari data akun di server.
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
 
@@ -15,10 +16,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _sandi = TextEditingController();
-  static const _emailContoh = 'admin@eventin.test';
-  static const _sandiContoh = 'admin123';
 
   bool _lihat = false;
+  bool _memproses = false;
   String? _galat;
 
   @override
@@ -28,22 +28,35 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     super.dispose();
   }
 
-  void _masuk() {
-    if (!_formKey.currentState!.validate()) return;
-    final email = _email.text.trim().toLowerCase();
+  Future<void> _masuk() async {
+    if (_memproses || !_formKey.currentState!.validate()) return;
+    setState(() {
+      _memproses = true;
+      _galat = null;
+    });
 
-    // Sementara (data contoh): hanya satu akun admin dengan kata sandi tetap.
-    // Nanti diganti login ke API; pemeriksaan peran admin wajib di backend,
-    // dan kata sandi tidak boleh disimpan di kode aplikasi.
-    if (email == _emailContoh && _sandi.text == _sandiContoh) {
+    try {
+      final user = await AuthService.login(
+        email: _email.text.trim().toLowerCase(),
+        password: _sandi.text,
+      );
+      if (!mounted) return;
+
+      if (!user.isAdmin) {
+        await AuthService.logout();
+        if (!mounted) return;
+        setState(() => _galat = 'Akun ini bukan admin. Gunakan aplikasi EventIn di ponsel.');
+        return;
+      }
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const AdminShell()),
       );
-    } else if (email == 'budi.s@gmail.com') {
-      setState(() => _galat = 'Akun ini bukan admin. Gunakan aplikasi EventIn di ponsel.');
-    } else {
-      setState(() => _galat = 'Email atau kata sandi salah. Coba lagi.');
+    } catch (e) {
+      if (mounted) setState(() => _galat = '$e');
+    } finally {
+      if (mounted) setState(() => _memproses = false);
     }
   }
 
@@ -189,7 +202,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: _masuk,
+                            onPressed: _memproses ? null : _masuk,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryBlue,
                               foregroundColor: Colors.white,

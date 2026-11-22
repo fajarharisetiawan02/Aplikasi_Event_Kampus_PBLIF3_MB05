@@ -17,86 +17,37 @@ class AdminBerandaScreen extends StatelessWidget {
         return ValueListenableBuilder<List<PenggunaAdmin>>(
           valueListenable: daftarPengguna,
           builder: (context, pengguna, _) {
-            final menunggu = pengajuan.where((p) => p.status == StatusPengajuan.menunggu).length;
+            final menunggu = pengajuan.where((p) => p.status == StatusPengajuan.menunggu).toList();
             final penyelenggara = pengguna.where((u) => u.peran == 'Penyelenggara').length;
             final event = daftarEventAdmin.take(3).toList();
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
               children: [
-                const AdminHeader(
-                  judul: 'Beranda',
-                  sub: 'Ringkasan platform EventIn',
+                _statistik(pengguna.length, penyelenggara, daftarEventAdmin.length, menunggu.length),
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, c) {
+                    final tinjau = _perluDitinjau(menunggu);
+                    final terbaru = _eventTerbaru(event);
+                    if (c.maxWidth >= 900) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 5, child: tinjau),
+                          const SizedBox(width: 16),
+                          Expanded(flex: 6, child: terbaru),
+                        ],
+                      );
+                    }
+                    return Column(children: [tinjau, const SizedBox(height: 16), terbaru]);
+                  },
                 ),
-                const SizedBox(height: 20),
-                _perluDitinjau(menunggu),
-                const SizedBox(height: 14),
-                _statistik(pengguna.length, penyelenggara, daftarEventAdmin.length, menunggu),
-                const SizedBox(height: 26),
-                const Text(
-                  'Event terbaru',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                ),
-                const SizedBox(height: 12),
-                for (final e in event) _eventBaris(e),
               ],
             );
           },
         );
       },
-    );
-  }
-
-  Widget _perluDitinjau(int menunggu) {
-    final ada = menunggu > 0;
-    final warna = ada ? AppColors.accentOrange : const Color(0xFF16A34A);
-
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: ada ? onBukaPengajuan : null,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: adminKartuDekor(),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: warna.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  ada ? Icons.hourglass_top_rounded : Icons.check_circle_outline_rounded,
-                  size: 22,
-                  color: warna,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      ada ? '$menunggu pengajuan penyelenggara menunggu' : 'Semua pengajuan sudah ditinjau',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      ada ? 'Tinjau lalu setujui atau tolak' : 'Tidak ada yang perlu ditindaklanjuti',
-                      style: const TextStyle(fontSize: 12, color: adminAbu),
-                    ),
-                  ],
-                ),
-              ),
-              if (ada) const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -107,31 +58,35 @@ class AdminBerandaScreen extends StatelessWidget {
         warna: AppColors.primaryBlue,
         label: 'Total pengguna',
         nilai: '$pengguna',
+        ket: 'akun terdaftar',
       ),
       AdminStatCard(
         ikon: Icons.badge_outlined,
         warna: const Color(0xFF7C3AED),
         label: 'Penyelenggara',
         nilai: '$penyelenggara',
+        ket: 'bisa membuat event',
       ),
       AdminStatCard(
         ikon: Icons.event_note_outlined,
         warna: const Color(0xFF16A34A),
         label: 'Total event',
         nilai: '$event',
+        ket: 'semua status',
       ),
       AdminStatCard(
         ikon: Icons.hourglass_top_rounded,
         warna: AppColors.accentOrange,
         label: 'Pengajuan menunggu',
         nilai: '$menunggu',
+        ket: 'perlu keputusan',
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, c) {
         final kolom = c.maxWidth >= 760 ? 4 : 2;
-        const jarak = 10.0;
+        const jarak = 16.0;
         final lebar = (c.maxWidth - jarak * (kolom - 1)) / kolom;
 
         return Wrap(
@@ -143,6 +98,116 @@ class AdminBerandaScreen extends StatelessWidget {
     );
   }
 
+  Widget _kepala(String judul, String sub) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: adminGaris))),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              judul,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textDark),
+            ),
+          ),
+          Text(sub, style: const TextStyle(fontSize: 12.5, color: adminAbu)),
+        ],
+      ),
+    );
+  }
+
+  // Pengajuan yang menunggu, dengan jalan pintas ke halaman Pengajuan.
+  Widget _perluDitinjau(List<Pengajuan> menunggu) {
+    final ada = menunggu.isNotEmpty;
+
+    return AdminPanel(
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _kepala(
+              'Perlu ditinjau',
+              ada ? '${menunggu.length} pengajuan penyelenggara menunggu' : 'Semua sudah ditinjau',
+            ),
+            if (!ada)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Column(
+                  children: [
+                    Icon(Icons.check_circle_outline_rounded, size: 40, color: Color(0xFF16A34A)),
+                    SizedBox(height: 8),
+                    Text(
+                      'Tidak ada yang perlu ditindaklanjuti',
+                      style: TextStyle(fontSize: 13, color: adminAbu),
+                    ),
+                  ],
+                ),
+              )
+            else
+              for (final p in menunggu.take(4))
+                InkWell(
+                  onTap: onBukaPengajuan,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 14),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFFBF2),
+                      border: Border(
+                        left: BorderSide(color: AppColors.accentOrange, width: 3),
+                        bottom: BorderSide(color: Color(0xFFEEF1F6)),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        AdminAvatar(nama: p.nama, radius: 18),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                p.nama,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              Text(
+                                '${p.organisasi}, ${p.tanggal}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 12, color: adminAbu),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        AdminTombolAksi(label: 'Tinjau', jenis: AdminAksi.detail, onTap: onBukaPengajuan),
+                      ],
+                    ),
+                  ),
+                ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _eventTerbaru(List<EventAdmin> event) {
+    return AdminPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _kepala('Event terbaru', '${daftarEventAdmin.length} event'),
+          for (final e in event) _eventBaris(e),
+        ],
+      ),
+    );
+  }
+
   Widget _eventBaris(EventAdmin e) {
     final badge = switch (e.status) {
       'Terbit' => const AdminBadge.hijau('Terbit'),
@@ -151,11 +216,20 @@ class AdminBerandaScreen extends StatelessWidget {
     };
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: adminKartuDekor(),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEF1F6)))),
       child: Row(
         children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.event_rounded, size: 21, color: AppColors.primaryBlue),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,17 +238,17 @@ class AdminBerandaScreen extends StatelessWidget {
                   e.judul,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
                 ),
                 const SizedBox(height: 2),
-                Text('${e.penyelenggara} · ${e.tanggal}', style: const TextStyle(fontSize: 12, color: adminAbu)),
+                Text('${e.penyelenggara}, ${e.tanggal}', style: const TextStyle(fontSize: 12, color: adminAbu)),
               ],
             ),
           ),
           const SizedBox(width: 12),
           Text(
             '${e.terdaftar} / ${e.kuota}',
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textDark),
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textDark),
           ),
           const SizedBox(width: 12),
           badge,

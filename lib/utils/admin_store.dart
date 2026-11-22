@@ -82,7 +82,7 @@ final ValueNotifier<List<Pengajuan>> daftarPengajuan =
       const Pengajuan(
         id: 'a1',
         nama: 'Muhammad Rafie',
-        email: 'Rafie@gmail.com',
+        email: 'rafie@gmail.com',
         organisasi: 'BEM Polibatam',
         tanggal: '20 Okt 2026',
         status: StatusPengajuan.menunggu,
@@ -90,7 +90,7 @@ final ValueNotifier<List<Pengajuan>> daftarPengajuan =
       const Pengajuan(
         id: 'a2',
         nama: 'Fajar Hari Setiawan',
-        email: 'Fajar@gmail.com',
+        email: 'fajar@gmail.com',
         organisasi: 'HIMA Informatika',
         tanggal: '20 Okt 2026',
         status: StatusPengajuan.menunggu,
@@ -98,7 +98,7 @@ final ValueNotifier<List<Pengajuan>> daftarPengajuan =
       const Pengajuan(
         id: 'a3',
         nama: 'Ferli Saputra',
-        email: 'Ferli@gmail.com',
+        email: 'ferli@gmail.com',
         organisasi: 'UKM Musik',
         tanggal: '19 Okt 2026',
         status: StatusPengajuan.menunggu,
