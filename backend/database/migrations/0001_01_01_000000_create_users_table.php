@@ -47,3 +47,11 @@ return new class extends Migration
         Schema::dropIfExists('sessions');
     }
 };
+Schema::table('users', function (Blueprint $table) {
+    $table->enum('role', [
+        'mahasiswa',
+        'panitia'
+    ])->default('mahasiswa');
+
+    $table->string('no_hp')->nullable();
+});

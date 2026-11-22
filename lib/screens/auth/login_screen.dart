@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_colors.dart';
 import 'register_screen.dart';
+import '../panitia/panitia_ganti_password_screen.dart';
+import '../panitia/panitia_scan_screen.dart';
 import '../user/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -44,7 +46,11 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
-          pageBuilder: (_, _, _) => HomeScreen(userName: user.nama),
+          pageBuilder: (_, _, _) => user.isPanitia
+              ? (user.wajibGantiPassword
+                  ? const PanitiaGantiPasswordScreen(wajib: true)
+                  : const PanitiaScanScreen())
+              : HomeScreen(userName: user.nama),
           transitionsBuilder: (_, animation, _, child) {
             final curved = CurvedAnimation(
               parent: animation,

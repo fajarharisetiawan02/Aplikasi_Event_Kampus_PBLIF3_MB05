@@ -7,6 +7,8 @@ class UserModel {
   final List<String> roles; // contoh: ["user"], atau ["user", "event_organizer"]
   final bool isAdmin;
   final String? token;
+  final String? panitiaEvent; // judul event yang dijaga, hanya untuk akun panitia
+  final bool wajibGantiPassword; // akun panitia yang belum mengganti password awal dari email
 
   UserModel({
     required this.id,
@@ -17,6 +19,8 @@ class UserModel {
     this.roles = const ["user"],
     this.isAdmin = false,
     this.token,
+    this.panitiaEvent,
+    this.wajibGantiPassword = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +35,8 @@ class UserModel {
           : ["user"],
       isAdmin: json['is_admin'] ?? false,
       token: json['token'],
+      panitiaEvent: json['panitia_event'] is Map ? json['panitia_event']['judul'] : null,
+      wajibGantiPassword: json['wajib_ganti_password'] == true,
     );
   }
 
@@ -47,4 +53,5 @@ class UserModel {
   }
 
   bool get isEventOrganizer => roles.contains('event_organizer');
+  bool get isPanitia => roles.contains('panitia');
 }

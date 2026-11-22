@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';
 import 'organizer_dashboard_screen.dart';
 import 'organizer_event_screen.dart';
-import 'organizer_scan_screen.dart';
+import 'organizer_panitia_screen.dart';
 import 'organizer_participant_screen.dart';
 
 class OrganizerMainScreen extends StatefulWidget {
@@ -23,7 +23,7 @@ class _OrganizerMainScreenState extends State<OrganizerMainScreen> {
         onOpenPeserta: () => setState(() => _selectedIndex = 3),
       ),
       const OrganizerEventScreen(),
-      const OrganizerScanScreen(),
+      const OrganizerPanitiaScreen(),
       const OrganizerParticipantScreen(),
       _profilPlaceholder(),
     ];
@@ -113,9 +113,9 @@ class _OrganizerMainScreenState extends State<OrganizerMainScreen> {
                 1,
               ),
               _navItem(
-                Icons.qr_code_scanner_rounded,
-                Icons.qr_code_scanner_rounded,
-                'Scan',
+                Icons.badge_outlined,
+                Icons.badge_rounded,
+                'Panitia',
                 2,
               ),
               _navItem(

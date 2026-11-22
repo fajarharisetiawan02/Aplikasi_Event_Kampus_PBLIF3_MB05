@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\PanitiaController;
+use App\Http\Controllers\PanitiaScanController;
 use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,4 +34,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/events/{event}/participants', [RegistrationController::class, 'participants'])->whereNumber('event');
     Route::put('/tickets/{registration}/status', [RegistrationController::class, 'updateStatus'])->whereNumber('registration');
+
+    // Penyelenggara mengelola panitia per event
+    Route::get('/events/{event}/panitia', [PanitiaController::class, 'index'])->whereNumber('event');
+    Route::post('/events/{event}/panitia', [PanitiaController::class, 'store'])->whereNumber('event');
+    Route::post('/events/{event}/panitia/{panitia}/kirim-ulang', [PanitiaController::class, 'kirimUlang'])->whereNumber(['event', 'panitia']);
+    Route::delete('/events/{event}/panitia/{panitia}', [PanitiaController::class, 'destroy'])->whereNumber(['event', 'panitia']);
+
+    // Akun panitia: scan tiket untuk event yang dijaga
+    Route::get('/panitia/event', [PanitiaScanController::class, 'event']);
+    Route::get('/panitia/hadir', [PanitiaScanController::class, 'hadir']);
+    Route::post('/panitia/scan', [PanitiaScanController::class, 'scan'])->middleware('throttle:60,1');
 });
