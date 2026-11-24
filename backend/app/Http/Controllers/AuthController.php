@@ -49,6 +49,15 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email atau password salah.'], 401);
         }
 
+        if ($user->isPanitia() && $user->panitia?->nonaktif_at) {
+            return response()->json(['message' => 'Akun panitia ini sudah dinonaktifkan.'], 403);
+        }
+
+        // Login pertama panitia menandai akunnya sudah dipakai (status berubah dari menunggu ke aktif).
+        if ($user->isPanitia()) {
+            Panitia::where('user_id', $user->id)->whereNull('aktif_at')->update(['aktif_at' => now()]);
+        }
+
         $token = $user->createToken('mobile')->plainTextToken;
 
         return response()->json([
@@ -102,11 +111,6 @@ class AuthController extends Controller
         }
 
         $user->update(['password' => $request->new_password]);
-
-        // Panitia dianggap aktif setelah mengganti password awal dari email.
-        if ($user->isPanitia()) {
-            Panitia::where('user_id', $user->id)->whereNull('aktif_at')->update(['aktif_at' => now()]);
-        }
 
         // token di perangkat lain dicabut, token yang sedang dipakai tetap hidup
         $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();

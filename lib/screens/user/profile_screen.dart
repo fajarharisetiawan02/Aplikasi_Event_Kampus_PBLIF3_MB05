@@ -6,6 +6,7 @@ import '../../utils/app_nav.dart';
 import 'edit_profile_screen.dart';
 import '../auth/login_screen.dart';
 import '../organizer/organizer_main_screen.dart';
+import 'ajukan_penyelenggara_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,7 +27,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _refresh() async {
     try {
       final user = await AuthService.fetchProfile();
-      if (mounted) setState(() => _user = user);
+      if (!mounted) return;
+      setState(() => _user = user);
+      // pengajuan baru disetujui: akun ini sekarang hanya untuk mode penyelenggara
+      if (user.isEventOrganizer && !user.isAdmin) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const OrganizerMainScreen()),
+          (route) => false,
+        );
+      }
     } on AuthException {
       // pakai data terakhir yang tersimpan
     }
@@ -294,49 +304,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _bukaForm() async {
+    final pesan = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const AjukanPenyelenggaraScreen()),
+    );
+    if (pesan == null || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(pesan)));
+    _refresh();
+  }
+
   Widget _organizerCard(UserModel user) {
+    final pengajuan = user.pengajuan;
     final bool isOrganizer = user.isEventOrganizer || user.isAdmin;
+
+    String judul;
+    String isi;
+    Color warna = AppColors.primaryBlue;
+    VoidCallback? onTap;
+    Widget? lencana;
+
+    if (isOrganizer) {
+      judul = 'Mode penyelenggara';
+      isi = 'Kelola event yang kamu buat';
+      onTap = () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const OrganizerMainScreen()),
+          );
+    } else if (pengajuan != null && pengajuan.menunggu) {
+      judul = 'Pengajuan sedang diperiksa';
+      isi = '${pengajuan.organisasi} • menunggu keputusan admin';
+      warna = const Color(0xFF8A4B00);
+      lencana = _lencana('Menunggu', const Color(0xFFFFF4E0), const Color(0xFF8A4B00));
+    } else if (pengajuan != null && pengajuan.bisaMengajukanLagi) {
+      final dicabut = pengajuan.status == 'dicabut';
+      judul = dicabut ? 'Peran penyelenggara dicabut' : 'Pengajuan ditolak';
+      final alasan = (pengajuan.alasan ?? '').trim();
+      isi = alasan.isEmpty ? 'Ketuk untuk mengajukan lagi' : '$alasan\nKetuk untuk mengajukan lagi';
+      warna = const Color(0xFF991B1B);
+      onTap = _bukaForm;
+    } else {
+      judul = 'Jadi penyelenggara';
+      isi = 'Ajukan akunmu untuk membuat event';
+      onTap = _bukaForm;
+    }
 
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        // sementara semua akun bisa membuka mode penyelenggara untuk uji tampilan
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const OrganizerMainScreen()),
-        ),
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: _cardDecoration(),
           child: Row(
             children: [
-              _iconBubble(Icons.storefront_outlined, AppColors.primaryBlue),
+              _iconBubble(Icons.storefront_outlined, warna),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOrganizer ? 'Mode penyelenggara' : 'Jadi penyelenggara',
+                      judul,
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textDark),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      isOrganizer
-                          ? 'Kelola event yang kamu buat'
-                          : 'Ajukan akunmu untuk membuat event',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                    ),
+                    Text(isi, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), height: 1.4)),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+              if (lencana != null) lencana,
+              if (onTap != null) const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _lencana(String teks, Color latar, Color warnaTeks) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: latar, borderRadius: BorderRadius.circular(20)),
+      child: Text(teks, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: warnaTeks)),
     );
   }
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import '../organizer/organizer_main_screen.dart';
 
 import '../../services/auth_service.dart';
 import '../../utils/app_colors.dart';
 import 'register_screen.dart';
-import '../panitia/panitia_ganti_password_screen.dart';
 import '../panitia/panitia_scan_screen.dart';
 import '../user/home_screen.dart';
 
@@ -47,10 +47,10 @@ class _LoginScreenState extends State<LoginScreen> {
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
           pageBuilder: (_, _, _) => user.isPanitia
-              ? (user.wajibGantiPassword
-                  ? const PanitiaGantiPasswordScreen(wajib: true)
-                  : const PanitiaScanScreen())
-              : HomeScreen(userName: user.nama),
+              ? const PanitiaScanScreen()
+              : (user.isEventOrganizer && !user.isAdmin)
+                  ? const OrganizerMainScreen()
+                  : HomeScreen(userName: user.nama),
           transitionsBuilder: (_, animation, _, child) {
             final curved = CurvedAnimation(
               parent: animation,
