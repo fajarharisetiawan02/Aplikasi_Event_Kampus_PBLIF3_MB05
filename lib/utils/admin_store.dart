@@ -1,14 +1,26 @@
 import 'package:flutter/foundation.dart';
+import '../services/api_client.dart';
 
-// Data contoh untuk tampilan admin (belum terhubung ke backend).
+// Pengajuan penyelenggara diambil dari backend. Pengguna dan event masih data contoh.
 
-enum StatusPengajuan { menunggu, disetujui, ditolak }
+enum StatusPengajuan { menunggu, disetujui, ditolak, dicabut }
+
+const _bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+String _tanggalIndonesia(String? iso) {
+  final t = DateTime.tryParse(iso ?? '')?.toLocal();
+  if (t == null) return '-';
+  return '${t.day} ${_bulan[t.month - 1]} ${t.year}';
+}
 
 class Pengajuan {
   final String id;
   final String nama;
   final String email;
   final String organisasi;
+  final String jabatan;
+  final String? buktiUrl;
+  final String? alasan;
   final String tanggal;
   final StatusPengajuan status;
 
@@ -19,16 +31,26 @@ class Pengajuan {
     required this.organisasi,
     required this.tanggal,
     required this.status,
+    this.jabatan = '',
+    this.buktiUrl,
+    this.alasan,
   });
 
-  Pengajuan copyWith({StatusPengajuan? status}) {
+  factory Pengajuan.fromJson(Map<String, dynamic> json) {
+    final pemohon = Map<String, dynamic>.from(json['pemohon'] ?? {});
     return Pengajuan(
-      id: id,
-      nama: nama,
-      email: email,
-      organisasi: organisasi,
-      tanggal: tanggal,
-      status: status ?? this.status,
+      id: '${json['id']}',
+      nama: pemohon['nama'] ?? '-',
+      email: pemohon['email'] ?? '-',
+      organisasi: json['organisasi'] ?? '-',
+      jabatan: json['jabatan'] ?? '',
+      buktiUrl: json['bukti_url'],
+      alasan: json['alasan'],
+      tanggal: _tanggalIndonesia(json['diajukan']),
+      status: StatusPengajuan.values.firstWhere(
+        (s) => s.name == json['status'],
+        orElse: () => StatusPengajuan.menunggu,
+      ),
     );
   }
 }
@@ -77,49 +99,7 @@ class EventAdmin {
   });
 }
 
-final ValueNotifier<List<Pengajuan>> daftarPengajuan =
-    ValueNotifier<List<Pengajuan>>([
-      const Pengajuan(
-        id: 'a1',
-        nama: 'Muhammad Rafie',
-        email: 'rafie@gmail.com',
-        organisasi: 'BEM Polibatam',
-        tanggal: '20 Okt 2026',
-        status: StatusPengajuan.menunggu,
-      ),
-      const Pengajuan(
-        id: 'a2',
-        nama: 'Fajar Hari Setiawan',
-        email: 'fajar@gmail.com',
-        organisasi: 'HIMA Informatika',
-        tanggal: '20 Okt 2026',
-        status: StatusPengajuan.menunggu,
-      ),
-      const Pengajuan(
-        id: 'a3',
-        nama: 'Ferli Saputra',
-        email: 'ferli@gmail.com',
-        organisasi: 'UKM Musik',
-        tanggal: '19 Okt 2026',
-        status: StatusPengajuan.menunggu,
-      ),
-      const Pengajuan(
-        id: 'a4',
-        nama: 'Siti Aminah',
-        email: 'siti.a@gmail.com',
-        organisasi: 'Komunitas Fotografi',
-        tanggal: '17 Okt 2026',
-        status: StatusPengajuan.disetujui,
-      ),
-      const Pengajuan(
-        id: 'a5',
-        nama: 'Andi Wijaya',
-        email: 'andi.w@gmail.com',
-        organisasi: '-',
-        tanggal: '15 Okt 2026',
-        status: StatusPengajuan.ditolak,
-      ),
-    ]);
+final ValueNotifier<List<Pengajuan>> daftarPengajuan = ValueNotifier<List<Pengajuan>>([]);
 
 final ValueNotifier<List<PenggunaAdmin>> daftarPengguna =
     ValueNotifier<List<PenggunaAdmin>>([
@@ -216,30 +196,29 @@ const daftarEventAdmin = [
   ),
 ];
 
-// Menyetujui pengajuan juga mengubah peran penggunanya menjadi Penyelenggara.
-// Mengembalikan ke "menunggu" mengembalikan perannya menjadi Peserta.
-void ubahPengajuan(String id, StatusPengajuan status) {
-  final lama = daftarPengajuan.value;
-  final i = lama.indexWhere((p) => p.id == id);
-  if (i < 0) return;
-
-  final email = lama[i].email;
-  final baru = List<Pengajuan>.from(lama);
-  baru[i] = lama[i].copyWith(status: status);
-  daftarPengajuan.value = baru;
-
-  if (status == StatusPengajuan.ditolak) return;
-
-  final peranBaru = status == StatusPengajuan.disetujui
-      ? 'Penyelenggara'
-      : 'Peserta';
-  daftarPengguna.value = [
-    for (final u in daftarPengguna.value)
-      if (u.email == email && u.peran != 'Admin')
-        u.copyWith(peran: peranBaru)
-      else
-        u,
+// Mengambil semua pengajuan dari backend. Melempar AuthException kalau gagal.
+Future<void> muatPengajuan() async {
+  final body = await ApiClient.get('/pengajuan-penyelenggara');
+  final data = (body['data'] as List? ?? []);
+  daftarPengajuan.value = [
+    for (final e in data) Pengajuan.fromJson(Map<String, dynamic>.from(e as Map)),
   ];
+}
+
+Future<void> setujuiPengajuan(String id) async {
+  await ApiClient.put('/pengajuan-penyelenggara/$id/setujui');
+  await muatPengajuan();
+}
+
+Future<void> tolakPengajuan(String id, String alasan) async {
+  await ApiClient.put('/pengajuan-penyelenggara/$id/tolak', body: {'alasan': alasan});
+  await muatPengajuan();
+}
+
+// Mencabut peran penyelenggara; akun kembali menjadi mahasiswa biasa.
+Future<void> cabutPengajuan(String id, String alasan) async {
+  await ApiClient.put('/pengajuan-penyelenggara/$id/cabut', body: {'alasan': alasan});
+  await muatPengajuan();
 }
 
 void ubahAktifPengguna(String email) {

@@ -23,6 +23,11 @@ class RegistrationController extends Controller
         $jumlah = $data['jumlah'] ?? 1;
         $user = $request->user();
 
+        // Akun penyelenggara dan panitia hanya mengurus event, tidak jadi peserta.
+        if ($user->isPenyelenggara() || $user->isPanitia()) {
+            return response()->json(['message' => 'Akun penyelenggara dan panitia tidak bisa mendaftar event.'], 403);
+        }
+
         if ($event->status !== 'published') {
             return response()->json(['message' => 'Event tidak ditemukan.'], 404);
         }

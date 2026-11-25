@@ -30,6 +30,14 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    muatPengajuan().catchError((Object e) {
+      if (mounted) adminPesan(context, 'Pengajuan gagal dimuat. Coba muat ulang halaman.', galat: true);
+    });
+  }
+
   // (ikon, nama menu, judul topbar, keterangan di bawah judul)
   static const _menu = [
     (Icons.home_outlined, 'Beranda', 'Beranda', 'Ringkasan platform EventIn'),

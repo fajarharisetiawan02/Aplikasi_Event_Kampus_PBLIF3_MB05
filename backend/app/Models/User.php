@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -31,6 +32,16 @@ class User extends Authenticatable
         return $this->hasOne(Panitia::class);
     }
 
+    public function pengajuanPenyelenggara(): HasMany
+    {
+        return $this->hasMany(PengajuanPenyelenggara::class);
+    }
+
+    public function isPenyelenggara(): bool
+    {
+        return in_array('event_organizer', $this->roles ?? [], true);
+    }
+
     public function isPanitia(): bool
     {
         return in_array('panitia', $this->roles ?? [], true);
@@ -48,8 +59,11 @@ class User extends Authenticatable
             'is_admin' => $this->is_admin,
         ];
 
-        if ($this->isPanitia() && $this->panitia?->event) {
-            $data['wajib_ganti_password'] = $this->panitia->aktif_at === null;
+        // Pengajuan terakhir ditampilkan di Profil: menunggu, disetujui, ditolak, atau dicabut.
+        $pengajuan = $this->pengajuanPenyelenggara()->latest('id')->first();
+        $data['pengajuan_penyelenggara'] = $pengajuan?->toApiArray();
+
+        if ($this->isPanitia() && $this->panitia?->event && ! $this->panitia->nonaktif_at) {
             $data['panitia_event'] = [
                 'id' => $this->panitia->event->id,
                 'judul' => $this->panitia->event->judul,

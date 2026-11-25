@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\PanitiaController;
 use App\Http\Controllers\PanitiaScanController;
+use App\Http\Controllers\PengajuanPenyelenggaraController;
 use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/events/{event}/participants', [RegistrationController::class, 'participants'])->whereNumber('event');
     Route::put('/tickets/{registration}/status', [RegistrationController::class, 'updateStatus'])->whereNumber('registration');
+
+    // Pengajuan menjadi penyelenggara: mahasiswa mengajukan, admin memutuskan
+    Route::post('/pengajuan-penyelenggara', [PengajuanPenyelenggaraController::class, 'store']);
+    Route::post('/pengajuan-penyelenggara/bukti', [PengajuanPenyelenggaraController::class, 'uploadBukti']);
+    Route::get('/pengajuan-penyelenggara', [PengajuanPenyelenggaraController::class, 'index']);
+    Route::put('/pengajuan-penyelenggara/{pengajuan}/setujui', [PengajuanPenyelenggaraController::class, 'setujui'])->whereNumber('pengajuan');
+    Route::put('/pengajuan-penyelenggara/{pengajuan}/tolak', [PengajuanPenyelenggaraController::class, 'tolak'])->whereNumber('pengajuan');
+    Route::put('/pengajuan-penyelenggara/{pengajuan}/cabut', [PengajuanPenyelenggaraController::class, 'cabut'])->whereNumber('pengajuan');
 
     // Penyelenggara mengelola panitia per event
     Route::get('/events/{event}/panitia', [PanitiaController::class, 'index'])->whereNumber('event');

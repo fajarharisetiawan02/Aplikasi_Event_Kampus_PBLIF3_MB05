@@ -1,3 +1,30 @@
+// Pengajuan menjadi penyelenggara milik akun ini (yang terakhir).
+class PengajuanSaya {
+  final String status; // menunggu, disetujui, ditolak, dicabut
+  final String organisasi;
+  final String jabatan;
+  final String? alasan;
+
+  PengajuanSaya({
+    required this.status,
+    required this.organisasi,
+    required this.jabatan,
+    this.alasan,
+  });
+
+  factory PengajuanSaya.fromJson(Map<String, dynamic> json) {
+    return PengajuanSaya(
+      status: json['status'] ?? 'menunggu',
+      organisasi: json['organisasi'] ?? '',
+      jabatan: json['jabatan'] ?? '',
+      alasan: json['alasan'],
+    );
+  }
+
+  bool get menunggu => status == 'menunggu';
+  bool get bisaMengajukanLagi => status == 'ditolak' || status == 'dicabut';
+}
+
 class UserModel {
   final String id;
   final String nama;
@@ -8,7 +35,7 @@ class UserModel {
   final bool isAdmin;
   final String? token;
   final String? panitiaEvent; // judul event yang dijaga, hanya untuk akun panitia
-  final bool wajibGantiPassword; // akun panitia yang belum mengganti password awal dari email
+  final PengajuanSaya? pengajuan;
 
   UserModel({
     required this.id,
@@ -20,7 +47,7 @@ class UserModel {
     this.isAdmin = false,
     this.token,
     this.panitiaEvent,
-    this.wajibGantiPassword = false,
+    this.pengajuan,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -36,7 +63,9 @@ class UserModel {
       isAdmin: json['is_admin'] ?? false,
       token: json['token'],
       panitiaEvent: json['panitia_event'] is Map ? json['panitia_event']['judul'] : null,
-      wajibGantiPassword: json['wajib_ganti_password'] == true,
+      pengajuan: json['pengajuan_penyelenggara'] is Map
+          ? PengajuanSaya.fromJson(Map<String, dynamic>.from(json['pengajuan_penyelenggara']))
+          : null,
     );
   }
 
