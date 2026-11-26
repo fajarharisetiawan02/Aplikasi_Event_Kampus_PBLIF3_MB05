@@ -17,9 +17,6 @@ class PanitiaScanController extends Controller
         if (! $panitia) {
             return $this->forbidden();
         }
-        if (! $panitia->aktif_at) {
-            return $this->harusGanti();
-        }
 
         return response()->json(['data' => $this->ringkasan($panitia)]);
     }
@@ -30,9 +27,6 @@ class PanitiaScanController extends Controller
         $panitia = $this->panitia($request);
         if (! $panitia) {
             return $this->forbidden();
-        }
-        if (! $panitia->aktif_at) {
-            return $this->harusGanti();
         }
 
         $items = Registration::with('user')
@@ -50,9 +44,6 @@ class PanitiaScanController extends Controller
         $panitia = $this->panitia($request);
         if (! $panitia) {
             return $this->forbidden();
-        }
-        if (! $panitia->aktif_at) {
-            return $this->harusGanti();
         }
 
         $data = $request->validate(['kode' => ['required', 'string', 'max:100']]);
@@ -126,12 +117,7 @@ class PanitiaScanController extends Controller
             return null;
         }
 
-        return Panitia::with('event')->where('user_id', $user->id)->first();
-    }
-
-    private function harusGanti(): JsonResponse
-    {
-        return response()->json(['message' => 'Ganti password awalmu dulu sebelum memindai tiket.'], 403);
+        return Panitia::with('event')->where('user_id', $user->id)->whereNull('nonaktif_at')->first();
     }
 
     private function forbidden(): JsonResponse

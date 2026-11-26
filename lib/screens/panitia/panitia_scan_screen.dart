@@ -5,7 +5,6 @@ import '../../services/auth_service.dart';
 import '../../services/panitia_service.dart';
 import '../../utils/app_colors.dart';
 import '../auth/login_screen.dart';
-import 'panitia_ganti_password_screen.dart';
 
 // Satu-satunya layar akun panitia: memindai QR tiket untuk event yang dijaga.
 class PanitiaScanScreen extends StatefulWidget {
@@ -120,18 +119,6 @@ class _PanitiaScanScreenState extends State<PanitiaScanScreen> {
     isi.dispose();
 
     if (kode != null && kode.trim().isNotEmpty) _proses(kode.trim());
-  }
-
-  Future<void> _gantiPassword() async {
-    final pesan = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => const PanitiaGantiPasswordScreen()),
-    );
-    if (pesan != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(pesan), behavior: SnackBarBehavior.floating),
-      );
-    }
   }
 
   void _daftarHadir() {
@@ -366,15 +353,12 @@ class _PanitiaScanScreenState extends State<PanitiaScanScreen> {
                     onSelected: (v) {
                       if (v == 'hadir') {
                         _daftarHadir();
-                      } else if (v == 'password') {
-                        _gantiPassword();
                       } else {
                         _keluar();
                       }
                     },
                     itemBuilder: (_) => const [
                       PopupMenuItem(value: 'hadir', child: Text('Daftar hadir')),
-                      PopupMenuItem(value: 'password', child: Text('Ganti password')),
                       PopupMenuItem(value: 'keluar', child: Text('Keluar')),
                     ],
                   ),
