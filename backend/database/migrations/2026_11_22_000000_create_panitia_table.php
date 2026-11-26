@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();
             $table->foreignId('dibuat_oleh')->constrained('users')->cascadeOnDelete();
             $table->timestamp('undangan_dikirim_at')->nullable();
-            $table->timestamp('aktif_at')->nullable(); // terisi saat panitia mengganti password awal (kosong = belum ganti, akun belum bisa scan)
+            $table->timestamp('aktif_at')->nullable(); // terisi saat panitia pertama kali login (kosong = belum pernah login)
             $table->timestamps();
         });
     }

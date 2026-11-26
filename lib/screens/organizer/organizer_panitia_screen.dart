@@ -5,7 +5,7 @@ import '../../utils/app_colors.dart';
 import '../../utils/organizer_event_store.dart';
 
 // Tab Panitia penyelenggara: tambah panitia untuk satu event. Panitia menerima email berisi password awal acak,
-// wajib menggantinya saat login pertama, lalu hanya bisa memindai tiket event itu.
+// lalu hanya bisa memindai tiket event itu.
 class OrganizerPanitiaScreen extends StatefulWidget {
   const OrganizerPanitiaScreen({super.key});
 
@@ -359,7 +359,7 @@ class _OrganizerPanitiaScreenState extends State<OrganizerPanitiaScreen> {
         children: [
           chip('Semua', null),
           chip('Aktif', true),
-          chip('Menunggu', false),
+          chip('Belum login', false),
         ],
       ),
     );
@@ -420,7 +420,7 @@ class _OrganizerPanitiaScreenState extends State<OrganizerPanitiaScreen> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        aktif ? 'Aktif' : 'Menunggu',
+        aktif ? 'Aktif' : 'Belum login',
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -535,7 +535,7 @@ class _OrganizerPanitiaScreenState extends State<OrganizerPanitiaScreen> {
                 const Padding(
                   padding: EdgeInsets.only(top: 8, bottom: 8),
                   child: Text(
-                    'Panitia ini belum mengganti password awal. Kirim ulang akan membuat password baru, dan password lama tidak berlaku.',
+                    'Panitia ini belum pernah login. Kirim ulang akan membuat password baru, dan password lama tidak berlaku.',
                     style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                 ),
@@ -708,7 +708,7 @@ class _FormPanitiaState extends State<_FormPanitia> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Untuk ${widget.namaEvent}. Email berisi password awal acak, dan panitia diminta menggantinya saat login pertama.',
+                  'Untuk ${widget.namaEvent}. Email berisi password acak untuk login sebagai panitia.',
                   style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 16),

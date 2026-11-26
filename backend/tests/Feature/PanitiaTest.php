@@ -106,7 +106,7 @@ class PanitiaTest extends TestCase
         Mail::assertSent(PanitiaUndangan::class, fn ($m) => $m->hasTo('budi@tes.test') && strlen($m->password) === 10);
     }
 
-    public function test_password_acak_dari_email_dipakai_login_dan_menandai_wajib_ganti(): void
+    public function test_password_acak_dari_email_dipakai_login(): void
     {
         $eo = $this->eo();
         $event = $this->event($eo);
@@ -118,7 +118,7 @@ class PanitiaTest extends TestCase
         $this->postJson('/api/login', ['email' => 'budi@tes.test', 'password' => $password])
             ->assertOk()
             ->assertJsonPath('data.roles.0', 'panitia')
-            ->assertJsonPath('data.wajib_ganti_password', true)
+            ->assertJsonMissingPath('data.wajib_ganti_password')
             ->assertJsonPath('data.panitia_event.id', $event->id);
     }
 
@@ -187,34 +187,20 @@ class PanitiaTest extends TestCase
         $this->actingAs($eo, 'sanctum')->getJson("/api/events/{$b->id}/panitia")->assertOk()->assertJsonCount(0, 'data');
     }
 
-    public function test_ganti_password_mengaktifkan_panitia(): void
+    public function test_login_pertama_mengaktifkan_panitia_dan_langsung_bisa_scan(): void
     {
         $eo = $this->eo();
-        $panitia = $this->tambah($eo, $this->event($eo));
+        $event = $this->event($eo);
+        $panitia = $this->tambah($eo, $event);
         $awal = $this->passwordDariEmail();
         $this->assertNull($panitia->aktif_at);
 
         $token = $this->postJson('/api/login', ['email' => 'budi@tes.test', 'password' => $awal])->json('data.token');
+        $this->assertNotNull($panitia->fresh()->aktif_at);
 
         // lepaskan actingAs penyelenggara dari langkah tambah panitia, supaya yang dipakai token panitia
         $this->app['auth']->forgetGuards();
-        $this->withToken($token)->putJson('/api/password', ['current_password' => $awal, 'new_password' => 'passbaru1'])->assertOk();
-
-        $this->assertNotNull($panitia->fresh()->aktif_at);
-        $this->postJson('/api/login', ['email' => 'budi@tes.test', 'password' => 'passbaru1'])
-            ->assertOk()->assertJsonPath('data.wajib_ganti_password', false);
-    }
-
-    public function test_panitia_belum_ganti_password_tidak_bisa_scan(): void
-    {
-        $eo = $this->eo();
-        $event = $this->event($eo);
-        $this->tiket($event, 'lunas');
-        $pan = $this->loginPanitia($event, false);
-
-        $this->actingAs($pan, 'sanctum')->postJson('/api/panitia/scan', ['kode' => 'EVT-AAAA1111'])->assertForbidden();
-        $this->actingAs($pan, 'sanctum')->getJson('/api/panitia/event')->assertForbidden();
-        $this->assertDatabaseHas('registrations', ['kode' => 'EVT-AAAA1111', 'status' => 'lunas']);
+        $this->withToken($token)->getJson('/api/panitia/event')->assertOk();
     }
 
     public function test_kirim_ulang_membuat_password_baru_dan_yang_lama_tidak_berlaku(): void

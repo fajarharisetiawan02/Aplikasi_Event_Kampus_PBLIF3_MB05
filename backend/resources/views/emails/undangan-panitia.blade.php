@@ -19,7 +19,7 @@
         <div style="font-size:18px;font-weight:bold;letter-spacing:1px;font-family:'Courier New',monospace;color:#1565E0;">{{ $password }}</div>
       </div>
       <p style="font-size:13px;line-height:1.6;margin:0;">
-        Demi keamanan, kamu akan diminta <b>mengganti password</b> saat pertama kali masuk.
+        Akun ini hanya bisa dipakai untuk memindai tiket event tersebut.
       </p>
       <p style="font-size:12px;color:#64748B;margin:16px 0 0;">Jangan bagikan email ini ke orang lain. Abaikan kalau kamu tidak merasa diundang.</p>
     </div>
