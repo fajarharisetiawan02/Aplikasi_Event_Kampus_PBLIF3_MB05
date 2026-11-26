@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/event_model.dart';
 import '../../models/ticket_model.dart';
 import '../../services/auth_service.dart';
@@ -66,7 +69,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 children: [
                   Stack(
                     children: [
-                      EventImage(url: event.bannerUrl, height: 260, width: double.infinity),
+                      EventImage(
+                        url: event.bannerUrl,
+                        height: (MediaQuery.of(context).size.width * 9 / 16).clamp(200.0, 340.0),
+                        width: double.infinity,
+                      ),
                       Positioned(
                         top: MediaQuery.of(context).padding.top + 8,
                         left: 16,
@@ -162,6 +169,109 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             'Sisa kuota',
             event.isHabis ? 'Habis' : '${event.sisaKuota} dari ${event.kuota}',
           ),
+          if (event.punyaNarahubung) _narahubungRow(event),
+        ],
+      ),
+    );
+  }
+
+  // Nomor WhatsApp dalam format internasional: 0812... menjadi 62812...
+  String _nomorWa(String raw) {
+    var n = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (n.startsWith('0')) n = '62${n.substring(1)}';
+    return n;
+  }
+
+  void _pesan(String teks) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(teks)));
+  }
+
+  Future<void> _chatWhatsApp() async {
+    final uri = Uri.parse(
+      'https://wa.me/${_nomorWa(_event.narahubungTelepon)}'
+      '?text=${Uri.encodeComponent('Halo, saya mau bertanya tentang event ${_event.judul}.')}',
+    );
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) _pesan('Tidak dapat membuka WhatsApp.');
+    } catch (_) {
+      _pesan('Tidak dapat membuka WhatsApp.');
+    }
+  }
+
+  Future<void> _salinNomor() async {
+    await Clipboard.setData(ClipboardData(text: _event.narahubungTelepon));
+    _pesan('Nomor narahubung disalin.');
+  }
+
+  Widget _narahubungRow(EventModel event) {
+    final ada = event.narahubungTelepon.trim().isNotEmpty;
+    final nama = event.narahubung.trim();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.phone_outlined, size: 19, color: AppColors.primaryBlue),
+              const SizedBox(width: 12),
+              const Text('Narahubung', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (nama.isNotEmpty)
+                      Text(
+                        nama,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textDark),
+                      ),
+                    if (ada)
+                      Text(
+                        event.narahubungTelepon,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (ada)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _chatWhatsApp,
+                    icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 18),
+                    label: const Text('Chat WhatsApp', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(0, 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _salinNomor,
+                    tooltip: 'Salin nomor',
+                    icon: const Icon(Icons.copy_rounded, size: 18, color: AppColors.primaryBlue),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.1),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -240,8 +350,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return;
     }
 
-    final maks = _event.sisaKuota < 5 ? _event.sisaKuota : 5;
-    int jumlah = 1;
+    // Satu akun hanya dapat satu tiket atau satu pendaftaran per event.
+    const jumlah = 1;
     bool loading = false;
     String? error;
 
@@ -276,22 +386,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   const SizedBox(height: 4),
                   Text(_event.judul, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                   const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Expanded(child: Text('Jumlah tiket', style: TextStyle(fontWeight: FontWeight.w600))),
-                      IconButton(
-                        onPressed: loading || jumlah <= 1 ? null : () => setSheet(() => jumlah--),
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
-                      SizedBox(
-                        width: 28,
-                        child: Text('$jumlah', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ),
-                      IconButton(
-                        onPressed: loading || jumlah >= maks ? null : () => setSheet(() => jumlah++),
-                        icon: const Icon(Icons.add_circle_outline),
-                      ),
-                    ],
+                  Text(
+                    _pakaiTiket
+                        ? 'Satu akun hanya dapat memesan satu tiket untuk event ini.'
+                        : 'Satu akun hanya dapat mendaftar satu kali untuk event ini.',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
                   ),
                   const Divider(height: 24),
                   Row(

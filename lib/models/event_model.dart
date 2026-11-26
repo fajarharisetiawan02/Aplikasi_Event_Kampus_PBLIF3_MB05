@@ -27,6 +27,8 @@ class EventModel {
   final int kuota;
   final int kuotaTerjual;
   final String organizer;
+  final String narahubung;
+  final String narahubungTelepon;
 
   EventModel({
     required this.id,
@@ -41,6 +43,8 @@ class EventModel {
     required this.kuota,
     required this.kuotaTerjual,
     required this.organizer,
+    this.narahubung = '',
+    this.narahubungTelepon = '',
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -58,6 +62,8 @@ class EventModel {
       kuota: json['kuota'] ?? 0,
       kuotaTerjual: json['kuota_terjual'] ?? 0,
       organizer: organizer is Map ? (organizer['nama'] ?? '') : '',
+      narahubung: json['narahubung'] ?? '',
+      narahubungTelepon: json['narahubung_telepon'] ?? '',
     );
   }
 
@@ -68,6 +74,9 @@ class EventModel {
     final now = DateTime.now();
     return tanggal.isBefore(DateTime(now.year, now.month, now.day));
   }
+
+  bool get punyaNarahubung =>
+      narahubung.trim().isNotEmpty || narahubungTelepon.trim().isNotEmpty;
 
   String get hargaLabel => formatRupiah(harga);
   String get tanggalLabel => formatTanggal(tanggal);
