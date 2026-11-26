@@ -10,7 +10,8 @@ class Event extends Model
 {
     protected $fillable = [
         'judul', 'deskripsi', 'kategori', 'banner_url',
-        'tanggal', 'waktu', 'lokasi', 'alamat', 'harga', 'kuota', 'status',
+        'tanggal', 'waktu', 'lokasi', 'alamat', 'narahubung', 'narahubung_telepon',
+        'harga', 'kuota', 'status',
     ];
 
     protected function casts(): array
@@ -34,6 +35,8 @@ class Event extends Model
     {
         if ($value !== null && str_contains($value, '/storage/banners/')) {
             $value = 'storage/banners/' . Str::after($value, '/storage/banners/');
+        } elseif ($value !== null && str_contains($value, '/api/banners/')) {
+            $value = 'storage/banners/' . Str::after($value, '/api/banners/');
         }
 
         $this->attributes['banner_url'] = $value;
@@ -41,6 +44,11 @@ class Event extends Model
 
     private function bannerLengkap(): ?string
     {
+        // Banner unggahan dilayani lewat rute API supaya mendapat header CORS (dibutuhkan Flutter web).
+        if ($this->banner_url && str_starts_with($this->banner_url, 'storage/banners/')) {
+            return url('api/banners/' . basename($this->banner_url));
+        }
+
         if ($this->banner_url && str_starts_with($this->banner_url, 'storage/')) {
             return url($this->banner_url);
         }
@@ -60,6 +68,8 @@ class Event extends Model
             'waktu' => $this->waktu,
             'lokasi' => $this->lokasi,
             'alamat' => $this->alamat,
+            'narahubung' => $this->narahubung,
+            'narahubung_telepon' => $this->narahubung_telepon,
             'harga' => $this->harga,
             'kuota' => $this->kuota,
             'kuota_terjual' => $this->kuota_terjual,

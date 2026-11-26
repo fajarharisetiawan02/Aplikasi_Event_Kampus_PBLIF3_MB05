@@ -139,7 +139,7 @@ class EventController extends Controller
 
         return response()->json([
             'message' => 'Banner berhasil diunggah.',
-            'data' => ['banner_url' => url('storage/' . $path)],
+            'data' => ['banner_url' => url('api/banners/' . basename($path))],
         ], 201);
     }
 
@@ -217,6 +217,8 @@ class EventController extends Controller
             'waktu' => ['nullable', 'string', 'max:50'],
             'lokasi' => ['required', 'string', 'max:150'],
             'alamat' => ['nullable', 'string', 'max:255'],
+            'narahubung' => ['nullable', 'string', 'max:100'],
+            'narahubung_telepon' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s]+$/'],
             'harga' => ['required', 'integer', 'min:0'],
             'kuota' => ['required', 'integer', 'min:1'],
             'status' => ['sometimes', 'in:draft,pending,published,rejected,cancelled'],
