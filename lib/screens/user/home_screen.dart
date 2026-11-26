@@ -9,6 +9,7 @@ import '../../models/event_model.dart';
 import '../../services/auth_service.dart' show AuthException;
 import '../../services/event_service.dart';
 import '../../utils/app_nav.dart';
+import '../../utils/event_categories.dart';
 import '../../widgets/event_image.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,16 +24,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Map<String, dynamic>> categories = [
-    {'name': 'Musik', 'icon': Icons.music_note},
-    {'name': 'Olahraga', 'icon': Icons.sports_soccer},
-    {'name': 'Seminar', 'icon': Icons.school},
-    {'name': 'Seni', 'icon': Icons.palette},
-  ];
+  final List<Map<String, dynamic>> categories = eventCategoryItems;
 
   List<EventModel> _events = [];
   bool _loading = true;
   String? _error;
+
+  // Event yang belum lewat tanggalnya.
+  List<EventModel> get _upcoming => _events.where((e) => !e.isLewat).toList();
+
+  // Event Pilihan: yang paling dekat waktunya, maksimal 5.
+  List<EventModel> get _pilihan {
+    final list = _upcoming..sort((a, b) => a.tanggal.compareTo(b.tanggal));
+    return list.take(5).toList();
+  }
+
+  // Event Terbaru: yang paling baru dibuat (id terbesar).
+  List<EventModel> get _terbaru {
+    final list = _upcoming..sort((a, b) => b.id.compareTo(a.id));
+    return list;
+  }
 
   @override
   void initState() {
@@ -132,6 +143,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+
+    final pilihan = _pilihan;
+    final terbaru = _terbaru;
 
     return RefreshIndicator(
       onRefresh: _loadEvents,
@@ -256,6 +270,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
+          if (terbaru.isEmpty)
+            SliverToBoxAdapter(child: _emptyEvents())
+          else
+            ...[
           // EVENT PILIHAN
           SliverToBoxAdapter(
             child: Padding(
@@ -280,12 +298,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
-                  itemCount: _events.length,
+                  itemCount: pilihan.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 16),
                   itemBuilder: (context, index) {
                     return GestureDetector(
-                      onTap: () => _openDetail(_events[index]),
-                      child: _eventCard(_events[index]),
+                      onTap: () => _openDetail(pilihan[index]),
+                      child: _eventCard(pilihan[index]),
                     );
                   },
                 ),
@@ -314,14 +332,45 @@ class _HomeScreenState extends State<HomeScreen> {
               return Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
                 child: GestureDetector(
-                  onTap: () => _openDetail(_events[index]),
-                  child: _smallEventCard(_events[index]),
+                  onTap: () => _openDetail(terbaru[index]),
+                  child: _smallEventCard(terbaru[index]),
                 ),
               );
-            }, childCount: _events.length),
+            }, childCount: terbaru.length),
           ),
+          ],
 
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // TAMPILAN KOSONG
+  // =========================
+
+  Widget _emptyEvents() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 0),
+      child: Column(
+        children: [
+          Icon(Icons.event_busy_outlined, size: 56, color: Colors.grey.shade300),
+          const SizedBox(height: 12),
+          const Text(
+            'Belum ada event',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Event yang sudah disetujui akan muncul di sini.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF64748B)),
+          ),
         ],
       ),
     );

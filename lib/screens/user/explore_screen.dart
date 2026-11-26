@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/event_model.dart';
 import '../../services/auth_service.dart' show AuthException;
 import '../../services/event_service.dart';
+import '../../utils/event_categories.dart';
 import '../../widgets/event_image.dart';
 import 'event_detail_screen.dart';
 
@@ -15,14 +16,10 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen> {
   String selectedCategory = 'Semua';
 
-  final List<String> categories = [
-    'Semua',
-    'Musik',
-    'Olahraga',
-    'Seminar',
-    'Seni',
-    'Teknologi',
-  ];
+  final List<String> categories = ['Semua', ...eventCategoryNames];
+
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
 
   List<EventModel> events = [];
   bool _loading = true;
@@ -32,6 +29,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void initState() {
     super.initState();
     _loadEvents();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadEvents() async {
@@ -53,13 +56,27 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   List<EventModel> get filteredEvents {
-    if (selectedCategory == 'Semua') {
-      return events;
-    }
+    final q = _query.trim().toLowerCase();
 
-    return events
-        .where((event) => event.kategori == selectedCategory)
-        .toList();
+    final list = events.where((event) {
+      final cocokKategori =
+          selectedCategory == 'Semua' || event.kategori == selectedCategory;
+      final cocokCari = q.isEmpty ||
+          event.judul.toLowerCase().contains(q) ||
+          event.lokasi.toLowerCase().contains(q) ||
+          event.kategori.toLowerCase().contains(q) ||
+          event.organizer.toLowerCase().contains(q);
+      return cocokKategori && cocokCari;
+    }).toList();
+
+    // Event yang akan datang di atas (terdekat dulu), yang sudah lewat di bawah.
+    list.sort((a, b) {
+      if (a.isLewat != b.isLewat) return a.isLewat ? 1 : -1;
+      return a.isLewat
+          ? b.tanggal.compareTo(a.tanggal)
+          : a.tanggal.compareTo(b.tanggal);
+    });
+    return list;
   }
 
   @override
@@ -67,7 +84,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
       body: SafeArea(
-        child: CustomScrollView(
+        child: RefreshIndicator(
+          onRefresh: _loadEvents,
+          child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // HEADER
             SliverToBoxAdapter(
@@ -140,6 +160,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     ],
                   ),
                   child: TextField(
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) => setState(() => _query = value),
                     decoration: InputDecoration(
                       hintText: 'Cari event, seminar, olahraga...',
                       hintStyle: const TextStyle(
@@ -349,9 +372,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          const Text(
-                            'Coba pilih kategori lainnya.',
-                            style: TextStyle(
+                          Text(
+                            _query.trim().isEmpty
+                                ? 'Coba pilih kategori lainnya.'
+                                : 'Coba kata kunci lain.',
+                            style: const TextStyle(
                               color: Color(0xFF64748B),
                             ),
                           ),
@@ -391,6 +416,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
               child: SizedBox(height: 20),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -444,7 +470,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Text(
-                      event.kategori,
+                      event.isLewat
+                          ? '${event.kategori} · Selesai'
+                          : event.kategori,
                       style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
