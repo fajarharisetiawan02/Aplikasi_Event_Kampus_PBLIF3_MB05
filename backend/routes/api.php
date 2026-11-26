@@ -55,3 +55,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/panitia/hadir', [PanitiaScanController::class, 'hadir']);
     Route::post('/panitia/scan', [PanitiaScanController::class, 'scan'])->middleware('throttle:60,1');
 });
+
+Route::get('/banners/{file}', function (string $file) {
+    $path = storage_path('app/public/banners/' . basename($file));
+    abort_unless(is_file($path), 404);
+ 
+    return response()->file($path);
+});

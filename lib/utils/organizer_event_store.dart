@@ -16,6 +16,8 @@ class OrganizerEvent {
   final TimeOfDay waktu;
   final String lokasi;
   final String alamat;
+  final String narahubung;
+  final String narahubungTelepon;
   final String? banner;
   final int harga; // 0 = gratis
   final int kuota;
@@ -37,6 +39,8 @@ class OrganizerEvent {
     required this.kuota,
     required this.terjual,
     required this.status,
+    this.narahubung = '',
+    this.narahubungTelepon = '',
     this.alasanPenolakan,
   });
 
@@ -70,6 +74,8 @@ class OrganizerEvent {
       waktu: _bacaWaktu(j['waktu'] as String?),
       lokasi: j['lokasi'] ?? '',
       alamat: j['alamat'] ?? '',
+      narahubung: j['narahubung'] ?? '',
+      narahubungTelepon: j['narahubung_telepon'] ?? '',
       banner: j['banner_url'] as String?,
       harga: j['harga'] ?? 0,
       kuota: j['kuota'] ?? 0,
@@ -91,6 +97,8 @@ class OrganizerEvent {
       'waktu': waktuEvent(waktu),
       'lokasi': lokasi,
       'alamat': alamat.isEmpty ? null : alamat,
+      'narahubung': narahubung.isEmpty ? null : narahubung,
+      'narahubung_telepon': narahubungTelepon.isEmpty ? null : narahubungTelepon,
       'harga': harga,
       'kuota': kuota,
       'status': status == StatusEvent.draft ? 'draft' : 'pending',
@@ -105,6 +113,8 @@ class OrganizerEvent {
     TimeOfDay? waktu,
     String? lokasi,
     String? alamat,
+    String? narahubung,
+    String? narahubungTelepon,
     int? harga,
     int? kuota,
     StatusEvent? status,
@@ -118,6 +128,8 @@ class OrganizerEvent {
       waktu: waktu ?? this.waktu,
       lokasi: lokasi ?? this.lokasi,
       alamat: alamat ?? this.alamat,
+      narahubung: narahubung ?? this.narahubung,
+      narahubungTelepon: narahubungTelepon ?? this.narahubungTelepon,
       banner: banner,
       harga: harga ?? this.harga,
       kuota: kuota ?? this.kuota,

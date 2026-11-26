@@ -25,6 +25,8 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
   final _deskripsi = TextEditingController();
   final _lokasi = TextEditingController();
   final _alamat = TextEditingController();
+  final _narahubung = TextEditingController();
+  final _telepon = TextEditingController();
   final _harga = TextEditingController();
   final _kuota = TextEditingController();
 
@@ -50,6 +52,8 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
       _deskripsi.text = e.deskripsi;
       _lokasi.text = e.lokasi;
       _alamat.text = e.alamat;
+      _narahubung.text = e.narahubung;
+      _telepon.text = e.narahubungTelepon;
       _kategori = e.kategori;
       _tanggal = e.tanggal;
       _waktu = e.waktu;
@@ -66,6 +70,8 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
     _deskripsi.dispose();
     _lokasi.dispose();
     _alamat.dispose();
+    _narahubung.dispose();
+    _telepon.dispose();
     _harga.dispose();
     _kuota.dispose();
     super.dispose();
@@ -174,6 +180,8 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
       waktu: _waktu!,
       lokasi: _lokasi.text.trim(),
       alamat: _alamat.text.trim(),
+      narahubung: _narahubung.text.trim(),
+      narahubungTelepon: _telepon.text.trim(),
       banner: _banner,
       harga: harga,
       kuota: kuota,
@@ -430,6 +438,40 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
             controller: _alamat,
             textCapitalization: TextCapitalization.words,
             decoration: _dekor('Alamat lengkap (opsional)'),
+          ),
+          const SizedBox(height: 14),
+          _label('Narahubung'),
+          TextFormField(
+            controller: _narahubung,
+            textCapitalization: TextCapitalization.words,
+            decoration: _dekor('Nama narahubung (opsional)', icon: Icons.person_outline_rounded),
+            validator: (v) => (v ?? '').trim().isEmpty && _telepon.text.trim().isNotEmpty
+                ? 'Nama narahubung wajib diisi'
+                : null,
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: _telepon,
+            keyboardType: TextInputType.phone,
+            decoration: _dekor('Nomor WhatsApp, contoh: 081234567890', icon: Icons.phone_outlined),
+            validator: (v) {
+              final nomor = (v ?? '').trim();
+              if (nomor.isEmpty) {
+                return _narahubung.text.trim().isNotEmpty ? 'Nomor WhatsApp wajib diisi' : null;
+              }
+              final digit = nomor.replaceAll(RegExp(r'[^0-9]'), '').length;
+              if (!RegExp(r'^[0-9+\-\s]+$').hasMatch(nomor) || digit < 9 || digit > 15) {
+                return 'Nomor WhatsApp tidak valid';
+              }
+              return null;
+            },
+          ),
+          const Padding(
+            padding: EdgeInsets.only(top: 6, left: 4),
+            child: Text(
+              'Isi dengan nomor WhatsApp yang aktif.',
+              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            ),
           ),
         ],
       ),
@@ -699,6 +741,12 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
           _baris(Icons.access_time_rounded, 'Waktu', _waktu == null ? '-' : waktuEvent(_waktu!)),
           _baris(Icons.location_on_outlined, 'Lokasi', _lokasi.text.trim().isEmpty ? '-' : _lokasi.text.trim()),
           if (_alamat.text.trim().isNotEmpty) _baris(Icons.map_outlined, 'Alamat', _alamat.text.trim()),
+          if (_narahubung.text.trim().isNotEmpty)
+            _baris(
+              Icons.support_agent_outlined,
+              'Narahubung',
+              '${_narahubung.text.trim()} (${_telepon.text.trim()})',
+            ),
           const Divider(height: 24, color: Color(0xFFF1F5F9)),
           _baris(Icons.confirmation_num_outlined, 'Harga', harga == 0 ? 'Gratis' : formatRupiah(harga)),
           _baris(Icons.groups_outlined, 'Kuota', '${_kuota.text.trim()} tiket'),

@@ -12,15 +12,11 @@ use Illuminate\Support\Str;
 
 class RegistrationController extends Controller
 {
-    private const MAKS_PER_PESANAN = 5;
-
     // CREATE: mahasiswa mendaftar ke sebuah event
     public function store(Request $request, Event $event): JsonResponse
     {
-        $data = $request->validate([
-            'jumlah' => ['nullable', 'integer', 'min:1', 'max:' . self::MAKS_PER_PESANAN],
-        ]);
-        $jumlah = $data['jumlah'] ?? 1;
+        // Satu akun hanya mendapat satu tiket per event, jumlah dari klien diabaikan.
+        $jumlah = 1;
         $user = $request->user();
 
         // Akun penyelenggara dan panitia hanya mengurus event, tidak jadi peserta.
