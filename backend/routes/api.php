@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/events/{event}/register', [RegistrationController::class, 'store'])->whereNumber('event');
     Route::get('/my-tickets', [RegistrationController::class, 'mine']);
+    Route::get('/tickets/{registration}/status', [RegistrationController::class, 'status'])->whereNumber('registration');
     Route::post('/tickets/{registration}/cancel', [RegistrationController::class, 'cancel'])->whereNumber('registration');
 
     Route::get('/events/{event}/participants', [RegistrationController::class, 'participants'])->whereNumber('event');
@@ -59,6 +60,6 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/banners/{file}', function (string $file) {
     $path = storage_path('app/public/banners/' . basename($file));
     abort_unless(is_file($path), 404);
- 
+
     return response()->file($path);
 });
