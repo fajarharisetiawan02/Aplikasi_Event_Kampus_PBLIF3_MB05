@@ -9,7 +9,20 @@ class Registration extends Model
 {
     public const AKTIF = ['menunggu_pembayaran', 'lunas', 'hadir'];
 
-    protected $fillable = ['user_id', 'event_id', 'kode', 'jumlah', 'total_harga', 'metode', 'status'];
+    protected $fillable = [
+        'user_id', 'event_id', 'kode', 'jumlah', 'total_harga', 'metode', 'status',
+        'paykita_order_id', 'pay_amount', 'qris', 'checkout_url', 'expires_at',
+        'nama_tim', 'anggota',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'pay_amount' => 'integer',
+            'expires_at' => 'datetime',
+            'anggota' => 'array',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -38,8 +51,23 @@ class Registration extends Model
             'dibuat' => $this->created_at?->toIso8601String(),
         ];
 
+        if ($this->nama_tim !== null) {
+            $data['nama_tim'] = $this->nama_tim;
+            $data['anggota'] = $this->anggota ?? [];
+        }
+
         if ($this->relationLoaded('event')) {
             $data['event'] = $this->event->toApiArray();
+
+            // Data QRIS hanya untuk pemilik tiket (relasi event dimuat saat tiket sendiri ditampilkan).
+            if ($this->metode === 'qris' && $this->paykita_order_id) {
+                $data['pembayaran'] = [
+                    'pay_amount' => $this->pay_amount,
+                    'qris' => $this->qris,
+                    'checkout_url' => $this->checkout_url,
+                    'expires_at' => $this->expires_at?->toIso8601String(),
+                ];
+            }
         }
 
         if ($this->relationLoaded('user')) {

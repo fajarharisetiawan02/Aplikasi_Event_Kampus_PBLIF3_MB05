@@ -9,6 +9,7 @@ import '../../services/event_service.dart';
 import '../../services/ticket_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/app_nav.dart';
+import 'payment_screen.dart';
 import '../../widgets/event_image.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -40,10 +41,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   bool get _bisaDaftar => !_event.isHabis && !_event.isLewat;
 
-  // Konser dan pameran dipesan sebagai tiket; event lain berupa pendaftaran.
-  bool get _pakaiTiket => _event.kategori == 'Musik' || _event.kategori == 'Seni';
+  // Tipe ditentukan penyelenggara: tiket, pendaftaran perorangan, atau pendaftaran tim.
+  bool get _pakaiTiket => _event.isTiket;
+  bool get _tim => _event.isTim;
 
   String get _kataKerja {
+    if (_tim) return 'Daftarkan Tim';
     if (!_pakaiTiket) return 'Daftar';
     return _event.isGratis ? 'Ambil Tiket' : 'Pesan Tiket';
   }
@@ -51,6 +54,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   String get _labelTombol {
     if (_event.isLewat) return _pakaiTiket ? 'Pemesanan Ditutup' : 'Pendaftaran Ditutup';
     if (_event.isHabis) return 'Kuota Habis';
+    if (_tim) return 'Daftarkan Tim';
     return _pakaiTiket ? _kataKerja : 'Daftar Sekarang';
   }
 
@@ -354,6 +358,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     const jumlah = 1;
     bool loading = false;
     String? error;
+    const metode = 'qris';
+
+    // Data tim (hanya dipakai untuk event tim). Baris anggota awal sebanyak batas minimal.
+    final namaTim = TextEditingController();
+    final anggota = <TextEditingController>[
+      for (var i = 0; i < (_event.minAnggota ?? 1).clamp(1, 50); i++) TextEditingController(),
+    ];
+    final minAnggota = _event.minAnggota ?? 1;
+    final maxAnggota = _event.maxAnggota ?? 50;
 
     await showModalBottomSheet(
       context: context,
@@ -367,10 +380,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           final total = _event.harga * jumlah;
 
           return Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + MediaQuery.of(context).viewInsets.bottom),
             child: SafeArea(
               top: false,
-              child: Column(
+              child: SingleChildScrollView(
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -382,20 +396,80 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  Text(_pakaiTiket ? 'Konfirmasi Pemesanan' : 'Konfirmasi Pendaftaran', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(_pakaiTiket ? 'Konfirmasi Pemesanan' : (_tim ? 'Pendaftaran Tim' : 'Konfirmasi Pendaftaran'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(_event.judul, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
                   const SizedBox(height: 20),
                   Text(
                     _pakaiTiket
                         ? 'Satu akun hanya dapat memesan satu tiket untuk event ini.'
-                        : 'Satu akun hanya dapat mendaftar satu kali untuk event ini.',
+                        : (_tim
+                            ? 'Kamu mendaftar sebagai perwakilan tim. Satu akun hanya dapat mendaftarkan satu tim.'
+                            : 'Satu akun hanya dapat mendaftar satu kali untuk event ini.'),
                     style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
                   ),
                   const Divider(height: 24),
+                  if (_tim) ...[
+                    const Text('Nama tim', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: namaTim,
+                      enabled: !loading,
+                      textCapitalization: TextCapitalization.words,
+                      maxLength: 60,
+                      decoration: const InputDecoration(hintText: 'Contoh: Garuda FC', counterText: ''),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text('Anggota tim', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        ),
+                        Text(
+                          '${anggota.length} dari $minAnggota-$maxAnggota orang',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    for (var i = 0; i < anggota.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: anggota[i],
+                                enabled: !loading,
+                                textCapitalization: TextCapitalization.words,
+                                decoration: InputDecoration(
+                                  hintText: i == 0 ? 'Nama lengkap (ketua tim)' : 'Nama lengkap anggota ${i + 1}',
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                            if (anggota.length > minAnggota && i > 0)
+                              IconButton(
+                                tooltip: 'Hapus anggota',
+                                onPressed: loading
+                                    ? null
+                                    : () => setSheet(() => anggota.removeAt(i)),
+                                icon: const Icon(Icons.close_rounded, size: 20),
+                              ),
+                          ],
+                        ),
+                      ),
+                    if (anggota.length < maxAnggota)
+                      TextButton.icon(
+                        onPressed: loading ? null : () => setSheet(() => anggota.add(TextEditingController())),
+                        icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                        label: const Text('Tambah anggota'),
+                      ),
+                    const Divider(height: 24),
+                  ],
                   Row(
                     children: [
-                      const Expanded(child: Text('Total', style: TextStyle(fontWeight: FontWeight.w600))),
+                      Expanded(child: Text(_tim ? 'Biaya per tim' : 'Total', style: const TextStyle(fontWeight: FontWeight.w600))),
                       Text(
                         formatRupiah(total),
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlue),
@@ -417,8 +491,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         Expanded(
                           child: Text(
                             total == 0
-                                ? 'Event ini gratis. Tiketmu langsung aktif.'
-                                : 'Pembayaran dilakukan tunai ke panitia. Tiket aktif setelah panitia mengonfirmasi pembayaranmu.',
+                                ? (_tim ? 'Event ini gratis. Tim langsung terdaftar.' : 'Event ini gratis. Tiketmu langsung aktif.')
+                                : (_tim
+                                    ? 'Bayar lewat e-wallet atau m-banking dengan scan QRIS. Tim terdaftar otomatis setelah pembayaran terdeteksi.'
+                                    : 'Bayar lewat e-wallet atau m-banking dengan scan QRIS. Tiket aktif otomatis setelah pembayaran terdeteksi.'),
                             style: const TextStyle(fontSize: 12, height: 1.4, color: Color(0xFF334155)),
                           ),
                         ),
@@ -437,14 +513,43 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       onPressed: loading
                           ? null
                           : () async {
+                              // Periksa data tim di perangkat dulu sebelum dikirim.
+                              if (_tim) {
+                                final isi = anggota.map((c) => c.text.trim()).toList();
+                                String? salah;
+                                if (namaTim.text.trim().length < 2) {
+                                  salah = 'Isi nama tim.';
+                                } else if (isi.any((n) => n.length < 2)) {
+                                  salah = 'Nama semua anggota harus diisi.';
+                                } else if (isi.length < minAnggota) {
+                                  salah = 'Jumlah anggota minimal $minAnggota orang.';
+                                }
+                                if (salah != null) {
+                                  setSheet(() => error = salah);
+                                  return;
+                                }
+                              }
                               setSheet(() {
                                 loading = true;
                                 error = null;
                               });
                               try {
-                                final ticket = await TicketService.register(eventId: _event.id, jumlah: jumlah);
+                                final ticket = await TicketService.register(
+                                  eventId: _event.id,
+                                  jumlah: jumlah,
+                                  metode: total == 0 ? 'cash' : metode,
+                                  namaTim: _tim ? namaTim.text.trim() : null,
+                                  anggota: _tim
+                                      ? anggota.map((c) => AnggotaTim(nama: c.text.trim())).toList()
+                                      : null,
+                                );
                                 if (sheetContext.mounted) Navigator.pop(sheetContext);
-                                if (mounted) _onRegistered(ticket);
+                                if (!mounted) return;
+                                if (ticket.menungguQris) {
+                                  _bukaPembayaran(ticket);
+                                } else {
+                                  _onRegistered(ticket);
+                                }
                               } on AuthException catch (e) {
                                 setSheet(() {
                                   loading = false;
@@ -454,19 +559,46 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             },
                       child: loading
                           ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                          : Text(_kataKerja, style: const TextStyle(fontSize: 16)),
+                          : Text(
+                              total > 0 && metode == 'qris' ? 'Bayar dengan QRIS' : _kataKerja,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           );
         },
       ),
     );
+
+    namaTim.dispose();
+    for (final c in anggota) {
+      c.dispose();
+    }
+  }
+
+  Future<void> _bukaPembayaran(TicketModel ticket) async {
+    _refresh();
+
+    final lihatTiket = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => PaymentScreen(ticket: ticket)),
+    );
+
+    if (!mounted) return;
+    _refresh();
+
+    if (lihatTiket == true) {
+      Navigator.pop(context);
+      AppNav.tabRequest.value = 2;
+    }
   }
 
   String get _judulSukses {
+    if (_tim) return 'Tim Berhasil Terdaftar';
     if (!_pakaiTiket) return 'Pendaftaran Berhasil';
     return _event.isGratis ? 'Tiket Berhasil Diambil' : 'Tiket Berhasil Dipesan';
   }
@@ -484,8 +616,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         title: Text(_judulSukses),
         content: Text(
           aktif
-              ? 'Tiketmu sudah aktif. Tunjukkan QR tiket ke panitia saat masuk acara.'
-              : 'Silakan bayar ${ticket.totalLabel} secara tunai ke panitia. Tiket aktif setelah pembayaranmu dikonfirmasi.',
+              ? (_tim
+                  ? 'Timmu sudah terdaftar. Tunjukkan QR ke panitia saat tim hadir.'
+                  : 'Tiketmu sudah aktif. Tunjukkan QR tiket ke panitia saat masuk acara.')
+              : 'Silakan selesaikan pembayaran ${ticket.totalLabel}. Pendaftaran aktif setelah pembayaranmu dikonfirmasi.',
           textAlign: TextAlign.center,
         ),
         actionsAlignment: MainAxisAlignment.center,
