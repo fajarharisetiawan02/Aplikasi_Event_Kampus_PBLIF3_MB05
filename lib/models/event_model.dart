@@ -29,6 +29,9 @@ class EventModel {
   final String organizer;
   final String narahubung;
   final String narahubungTelepon;
+  final String tipe; // tiket, daftar, atau tim
+  final int? minAnggota;
+  final int? maxAnggota;
 
   EventModel({
     required this.id,
@@ -45,6 +48,9 @@ class EventModel {
     required this.organizer,
     this.narahubung = '',
     this.narahubungTelepon = '',
+    this.tipe = 'daftar',
+    this.minAnggota,
+    this.maxAnggota,
   });
 
   factory EventModel.fromJson(Map<String, dynamic> json) {
@@ -64,8 +70,14 @@ class EventModel {
       organizer: organizer is Map ? (organizer['nama'] ?? '') : '',
       narahubung: json['narahubung'] ?? '',
       narahubungTelepon: json['narahubung_telepon'] ?? '',
+      tipe: json['tipe'] ?? 'daftar',
+      minAnggota: json['min_anggota'] as int?,
+      maxAnggota: json['max_anggota'] as int?,
     );
   }
+
+  bool get isTiket => tipe == 'tiket';
+  bool get isTim => tipe == 'tim';
 
   int get sisaKuota => kuota - kuotaTerjual;
   bool get isGratis => harga == 0;

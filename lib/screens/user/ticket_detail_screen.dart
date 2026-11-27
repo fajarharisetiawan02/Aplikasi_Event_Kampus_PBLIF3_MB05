@@ -5,6 +5,7 @@ import '../../services/auth_service.dart';
 import '../../services/ticket_service.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/event_image.dart';
+import 'payment_screen.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   final TicketModel ticket;
@@ -30,6 +31,21 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       case TicketStatus.kadaluarsa:
       case TicketStatus.dibatalkan:
         return Colors.red;
+    }
+  }
+
+  Future<void> _lanjutkanPembayaran() async {
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => PaymentScreen(ticket: _ticket)),
+    );
+    if (!mounted) return;
+
+    try {
+      final baru = await TicketService.status(_ticket.registrationId);
+      if (mounted) setState(() => _ticket = baru);
+    } on AuthException {
+      // Tetap tampilkan data terakhir kalau pembaruan gagal.
     }
   }
 
@@ -178,14 +194,23 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         const SizedBox(height: 12),
                         _infoRow(Icons.location_on_outlined, 'Lokasi', ticket.eventLocation),
                         const SizedBox(height: 12),
-                        _infoRow(Icons.confirmation_number_outlined, 'Jumlah Tiket', '${ticket.jumlah}'),
+                        if (ticket.isTim) ...[
+                          _infoRow(Icons.groups_2_outlined, 'Nama Tim', ticket.namaTim ?? '-'),
+                          const SizedBox(height: 12),
+                          _infoRow(
+                            Icons.person_outline_rounded,
+                            'Anggota (${ticket.anggota.length})',
+                            ticket.anggota.map((a) => a.nama).join(', '),
+                          ),
+                        ] else
+                          _infoRow(Icons.confirmation_number_outlined, 'Jumlah Tiket', '${ticket.jumlah}'),
                         const SizedBox(height: 12),
                         _infoRow(Icons.payments_outlined, 'Total', ticket.totalLabel),
                         const SizedBox(height: 12),
                         _infoRow(
                           Icons.account_balance_wallet_outlined,
                           'Pembayaran',
-                          ticket.metode == 'gratis' ? 'Gratis' : 'Tunai ke panitia',
+                          ticket.metodeLabel,
                         ),
                       ],
                     ),
@@ -193,6 +218,18 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 ],
               ),
             ),
+            if (ticket.menungguQris) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: _lanjutkanPembayaran,
+                  icon: const Icon(Icons.qr_code_2_rounded),
+                  label: const Text('Lanjutkan pembayaran QRIS'),
+                ),
+              ),
+            ],
             if (ticket.bisaDibatalkan) ...[
               const SizedBox(height: 16),
               SizedBox(
@@ -221,7 +258,9 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
       case TicketStatus.aktif:
         return 'Tunjukkan QR ini ke panitia saat check-in';
       case TicketStatus.menunggu:
-        return 'Bayar tunai ke panitia. QR aktif setelah pembayaran dikonfirmasi';
+        return ticket.metode == 'qris'
+            ? 'Selesaikan pembayaran QRIS. QR tiket aktif setelah pembayaran terdeteksi'
+            : 'Menunggu pembayaran. QR aktif setelah pembayaran dikonfirmasi';
       case TicketStatus.digunakan:
         return 'Tiket ini sudah digunakan untuk check-in';
       case TicketStatus.kadaluarsa:
