@@ -11,7 +11,7 @@ class Event extends Model
     protected $fillable = [
         'judul', 'deskripsi', 'kategori', 'banner_url',
         'tanggal', 'waktu', 'lokasi', 'alamat', 'narahubung', 'narahubung_telepon',
-        'harga', 'kuota', 'status',
+        'harga', 'kuota', 'status', 'tipe', 'min_anggota', 'max_anggota',
     ];
 
     protected function casts(): array
@@ -21,6 +21,8 @@ class Event extends Model
             'harga' => 'integer',
             'kuota' => 'integer',
             'kuota_terjual' => 'integer',
+            'min_anggota' => 'integer',
+            'max_anggota' => 'integer',
         ];
     }
 
@@ -56,6 +58,12 @@ class Event extends Model
         return $this->banner_url;
     }
 
+    // Event lama belum punya tipe: musik dan seni dianggap tiket, sisanya pendaftaran biasa.
+    public function tipeEfektif(): string
+    {
+        return $this->tipe ?? (in_array($this->kategori, ['Musik', 'Seni'], true) ? 'tiket' : 'daftar');
+    }
+
     public function toApiArray(): array
     {
         return [
@@ -73,6 +81,9 @@ class Event extends Model
             'harga' => $this->harga,
             'kuota' => $this->kuota,
             'kuota_terjual' => $this->kuota_terjual,
+            'tipe' => $this->tipeEfektif(),
+            'min_anggota' => $this->min_anggota,
+            'max_anggota' => $this->max_anggota,
             'status' => $this->status,
             'alasan_penolakan' => $this->alasan_penolakan,
             'organizer' => [

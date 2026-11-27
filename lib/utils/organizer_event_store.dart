@@ -18,6 +18,9 @@ class OrganizerEvent {
   final String alamat;
   final String narahubung;
   final String narahubungTelepon;
+  final String tipe; // tiket, daftar, atau tim
+  final int? minAnggota;
+  final int? maxAnggota;
   final String? banner;
   final int harga; // 0 = gratis
   final int kuota;
@@ -41,6 +44,9 @@ class OrganizerEvent {
     required this.status,
     this.narahubung = '',
     this.narahubungTelepon = '',
+    this.tipe = 'daftar',
+    this.minAnggota,
+    this.maxAnggota,
     this.alasanPenolakan,
   });
 
@@ -76,6 +82,9 @@ class OrganizerEvent {
       alamat: j['alamat'] ?? '',
       narahubung: j['narahubung'] ?? '',
       narahubungTelepon: j['narahubung_telepon'] ?? '',
+      tipe: j['tipe'] ?? 'daftar',
+      minAnggota: j['min_anggota'] as int?,
+      maxAnggota: j['max_anggota'] as int?,
       banner: j['banner_url'] as String?,
       harga: j['harga'] ?? 0,
       kuota: j['kuota'] ?? 0,
@@ -101,6 +110,9 @@ class OrganizerEvent {
       'narahubung_telepon': narahubungTelepon.isEmpty ? null : narahubungTelepon,
       'harga': harga,
       'kuota': kuota,
+      'tipe': tipe,
+      'min_anggota': tipe == 'tim' ? minAnggota : null,
+      'max_anggota': tipe == 'tim' ? maxAnggota : null,
       'status': status == StatusEvent.draft ? 'draft' : 'pending',
     };
   }
@@ -115,6 +127,9 @@ class OrganizerEvent {
     String? alamat,
     String? narahubung,
     String? narahubungTelepon,
+    String? tipe,
+    int? minAnggota,
+    int? maxAnggota,
     int? harga,
     int? kuota,
     StatusEvent? status,
@@ -130,6 +145,9 @@ class OrganizerEvent {
       alamat: alamat ?? this.alamat,
       narahubung: narahubung ?? this.narahubung,
       narahubungTelepon: narahubungTelepon ?? this.narahubungTelepon,
+      tipe: tipe ?? this.tipe,
+      minAnggota: minAnggota ?? this.minAnggota,
+      maxAnggota: maxAnggota ?? this.maxAnggota,
       banner: banner,
       harga: harga ?? this.harga,
       kuota: kuota ?? this.kuota,

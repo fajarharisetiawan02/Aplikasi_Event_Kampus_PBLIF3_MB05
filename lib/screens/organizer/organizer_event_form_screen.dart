@@ -29,8 +29,11 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
   final _telepon = TextEditingController();
   final _harga = TextEditingController();
   final _kuota = TextEditingController();
+  final _minAnggota = TextEditingController();
+  final _maxAnggota = TextEditingController();
 
   int _langkah = 0;
+  String? _tipe; // kosong = ikut kategori (musik dan seni = tiket)
   String? _kategori;
   DateTime? _tanggal;
   TimeOfDay? _waktu;
@@ -42,6 +45,9 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
   String? _banner;
 
   bool get _edit => widget.event != null;
+
+  String get _tipeAktif =>
+      _tipe ?? ((_kategori == 'Musik' || _kategori == 'Seni') ? 'tiket' : 'daftar');
 
   @override
   void initState() {
@@ -60,6 +66,9 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
       _berbayar = !e.gratis;
       _harga.text = e.gratis ? '' : e.harga.toString();
       _kuota.text = e.kuota.toString();
+      _tipe = e.tipe;
+      _minAnggota.text = e.minAnggota?.toString() ?? '';
+      _maxAnggota.text = e.maxAnggota?.toString() ?? '';
       _banner = e.banner;
     }
   }
@@ -74,6 +83,8 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
     _telepon.dispose();
     _harga.dispose();
     _kuota.dispose();
+    _minAnggota.dispose();
+    _maxAnggota.dispose();
     super.dispose();
   }
 
@@ -155,7 +166,10 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
 
     final kuota = int.tryParse(_kuota.text.trim()) ?? 0;
     final harga = int.tryParse(_harga.text.trim()) ?? 0;
-    if (kuota < 1 || (_berbayar && harga < 1)) {
+    final minA = int.tryParse(_minAnggota.text.trim()) ?? 0;
+    final maxA = int.tryParse(_maxAnggota.text.trim()) ?? 0;
+    final timSalah = _tipeAktif == 'tim' && (minA < 1 || maxA < minA);
+    if (kuota < 1 || (_berbayar && harga < 1) || timSalah) {
       setState(() => _langkah = 1);
       WidgetsBinding.instance.addPostFrameCallback((_) => _formTiket.currentState?.validate());
       return false;
@@ -185,6 +199,9 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
       banner: _banner,
       harga: harga,
       kuota: kuota,
+      tipe: _tipeAktif,
+      minAnggota: _tipeAktif == 'tim' ? int.tryParse(_minAnggota.text.trim()) : null,
+      maxAnggota: _tipeAktif == 'tim' ? int.tryParse(_maxAnggota.text.trim()) : null,
       terjual: lama?.terjual ?? 0,
       status: status,
     );
@@ -627,7 +644,27 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _label('Jenis tiket'),
+          _label('Jenis pendaftaran'),
+          Row(
+            children: [
+              Expanded(child: _pilihanTipe('tiket', 'Tiket', Icons.confirmation_num_outlined)),
+              const SizedBox(width: 10),
+              Expanded(child: _pilihanTipe('daftar', 'Daftar', Icons.how_to_reg_outlined)),
+              const SizedBox(width: 10),
+              Expanded(child: _pilihanTipe('tim', 'Tim', Icons.groups_2_outlined)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            switch (_tipeAktif) {
+              'tiket' => 'Peserta memesan tiket, cocok untuk konser atau pertunjukan.',
+              'tim' => 'Perwakilan mendaftarkan tim beserta daftar anggotanya, cocok untuk lomba.',
+              _ => 'Peserta mendaftar sebagai perorangan, cocok untuk seminar atau workshop.',
+            },
+            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 14),
+          _label(_tipeAktif == 'tim' ? 'Biaya pendaftaran' : 'Jenis tiket'),
           Row(
             children: [
               Expanded(child: _pilihanJenis('Gratis', Icons.card_giftcard_rounded, !_berbayar)),
@@ -637,7 +674,7 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
           ),
           if (_berbayar) ...[
             const SizedBox(height: 14),
-            _label('Harga tiket'),
+            _label(_tipeAktif == 'tim' ? 'Biaya per tim' : 'Harga tiket'),
             TextFormField(
               controller: _harga,
               keyboardType: TextInputType.number,
@@ -662,7 +699,7 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Pembayaran dilakukan tunai ke panitia. Tiket aktif setelah QR bayar di-scan.',
+                      'Pembayaran lewat QRIS. Pendaftaran aktif otomatis setelah pembayaran terdeteksi.',
                       style: TextStyle(fontSize: 12, color: Color(0xFF8A4B00)),
                     ),
                   ),
@@ -671,18 +708,88 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
             ),
           ],
           const SizedBox(height: 14),
-          _label('Kuota peserta'),
+          _label(_tipeAktif == 'tim' ? 'Kuota tim' : 'Kuota peserta'),
           TextFormField(
             controller: _kuota,
             keyboardType: TextInputType.number,
-            decoration: _dekor('Contoh: 100').copyWith(suffixText: 'tiket'),
+            decoration: _dekor(_tipeAktif == 'tim' ? 'Contoh: 16' : 'Contoh: 100')
+                .copyWith(suffixText: _tipeAktif == 'tim' ? 'tim' : 'tiket'),
             validator: (v) {
               final n = int.tryParse((v ?? '').trim());
               if (n == null || n <= 0) return 'Isi kuota lebih dari 0';
               return null;
             },
           ),
+          if (_tipeAktif == 'tim') ...[
+            const SizedBox(height: 14),
+            _label('Jumlah anggota per tim'),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _minAnggota,
+                    keyboardType: TextInputType.number,
+                    decoration: _dekor('Minimal').copyWith(suffixText: 'orang'),
+                    validator: (v) {
+                      final n = int.tryParse((v ?? '').trim());
+                      if (n == null || n < 1) return 'Isi minimal 1';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _maxAnggota,
+                    keyboardType: TextInputType.number,
+                    decoration: _dekor('Maksimal').copyWith(suffixText: 'orang'),
+                    validator: (v) {
+                      final n = int.tryParse((v ?? '').trim());
+                      final min = int.tryParse(_minAnggota.text.trim()) ?? 1;
+                      if (n == null || n < min) return 'Tidak boleh di bawah minimal';
+                      if (n > 50) return 'Maksimal 50';
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _pilihanTipe(String nilai, String label, IconData icon) {
+    final aktif = _tipeAktif == nilai;
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => setState(() => _tipe = nilai),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: aktif ? AppColors.primaryBlue.withValues(alpha: 0.08) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: aktif ? AppColors.primaryBlue : const Color(0xFFE5EAF5),
+            width: aktif ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 22, color: aktif ? AppColors.primaryBlue : const Color(0xFF64748B)),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: aktif ? AppColors.primaryBlue : AppColors.textDark,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -748,8 +855,15 @@ class _OrganizerEventFormScreenState extends State<OrganizerEventFormScreen> {
               '${_narahubung.text.trim()} (${_telepon.text.trim()})',
             ),
           const Divider(height: 24, color: Color(0xFFF1F5F9)),
-          _baris(Icons.confirmation_num_outlined, 'Harga', harga == 0 ? 'Gratis' : formatRupiah(harga)),
-          _baris(Icons.groups_outlined, 'Kuota', '${_kuota.text.trim()} tiket'),
+          _baris(
+            Icons.how_to_reg_outlined,
+            'Jenis',
+            switch (_tipeAktif) { 'tiket' => 'Tiket', 'tim' => 'Pendaftaran tim', _ => 'Pendaftaran perorangan' },
+          ),
+          _baris(Icons.confirmation_num_outlined, _tipeAktif == 'tim' ? 'Biaya per tim' : 'Harga', harga == 0 ? 'Gratis' : formatRupiah(harga)),
+          _baris(Icons.groups_outlined, 'Kuota', '${_kuota.text.trim()} ${_tipeAktif == 'tim' ? 'tim' : 'tiket'}'),
+          if (_tipeAktif == 'tim')
+            _baris(Icons.group_add_outlined, 'Anggota per tim', '${_minAnggota.text.trim()} - ${_maxAnggota.text.trim()} orang'),
           if (_deskripsi.text.trim().isNotEmpty) ...[
             const Divider(height: 24, color: Color(0xFFF1F5F9)),
             Text(

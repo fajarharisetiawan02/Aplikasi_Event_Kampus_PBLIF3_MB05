@@ -208,7 +208,7 @@ class EventController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'judul' => ['required', 'string', 'min:3', 'max:150'],
             'deskripsi' => ['required', 'string'],
             'kategori' => ['required', 'in:' . implode(',', self::KATEGORI)],
@@ -222,7 +222,22 @@ class EventController extends Controller
             'harga' => ['required', 'integer', 'min:0'],
             'kuota' => ['required', 'integer', 'min:1'],
             'status' => ['sometimes', 'in:draft,pending,published,rejected,cancelled'],
+            'tipe' => ['nullable', 'in:tiket,daftar,tim'],
+            'min_anggota' => ['nullable', 'required_if:tipe,tim', 'integer', 'min:1', 'max:50'],
+            'max_anggota' => ['nullable', 'required_if:tipe,tim', 'integer', 'min:1', 'max:50', 'gte:min_anggota'],
+        ], [
+            'min_anggota.required_if' => 'Isi jumlah anggota minimal untuk event tim.',
+            'max_anggota.required_if' => 'Isi jumlah anggota maksimal untuk event tim.',
+            'max_anggota.gte' => 'Anggota maksimal tidak boleh lebih kecil dari minimal.',
         ]);
+
+        // Batas anggota hanya berlaku untuk event tim.
+        if (($data['tipe'] ?? null) !== 'tim') {
+            $data['min_anggota'] = null;
+            $data['max_anggota'] = null;
+        }
+
+        return $data;
     }
 
     private function canManage(User $user): bool
